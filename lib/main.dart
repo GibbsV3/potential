@@ -1,20 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const MainApp());
-}
+import 'app/app.dart';
+import 'features/dashboard/data/dashboard_local_store.dart';
+import 'features/dashboard/data/local_dashboard_repository.dart';
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const CupertinoApp(
-      home: CupertinoPageScaffold(
-        child: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
-  }
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final repository = LocalDashboardRepository(DashboardLocalStore(prefs));
+  runApp(PotentialApp(repository: repository));
 }

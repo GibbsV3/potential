@@ -1,0 +1,79 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../data/dashboard_repository.dart';
+import '../../domain/routine.dart';
+import '../dashboard_date_utils.dart';
+import '../routine_progress.dart';
+
+part 'dashboard_event.dart';
+part 'dashboard_state.dart';
+
+class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
+  DashboardBloc(this._repository)
+      : super(DashboardState.initial(DateTime.now())) {
+    on<DashboardLoaded>(_onLoaded);
+    on<DashboardDateSelected>(_onDateSelected);
+    on<DashboardTaskToggled>(_onTaskToggled);
+    on<DashboardTaskProgressChanged>(_onTaskProgressChanged);
+  }
+
+  final DashboardRepository _repository;
+
+  Future<void> _onLoaded(
+    DashboardLoaded event,
+    Emitter<DashboardState> emit,
+  ) async {
+    emit(state.copyWith(status: DashboardStatus.loading));
+    try {
+      final routines = await _repository.loadRoutines();
+      final completions = await _repository.loadCompletions();
+      emit(state.buildWith(
+        routines: routines,
+        completions: completions,
+        selectedDate: state.selectedDate,
+        status: DashboardStatus.ready,
+      ));
+    } catch (error) {
+      emit(state.copyWith(
+        status: DashboardStatus.failure,
+        errorMessage: error.toString(),
+      ));
+    }
+  }
+
+  void _onDateSelected(
+    DashboardDateSelected event,
+    Emitter<DashboardState> emit,
+  ) {
+    emit(state.buildWith(selectedDate: event.date));
+  }
+
+  Future<void> _onTaskToggled(
+    DashboardTaskToggled event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final current = state.selectedDayCompletions[event.taskId] ?? 0;
+    final updated = current >= 1 ? 0.0 : 1.0;
+    await _repository.setTaskProgress(
+      dateKey(event.date),
+      event.taskId,
+      updated,
+    );
+    final completions = await _repository.loadCompletions();
+    emit(state.buildWith(completions: completions));
+  }
+
+  Future<void> _onTaskProgressChanged(
+    DashboardTaskProgressChanged event,
+    Emitter<DashboardState> emit,
+  ) async {
+    await _repository.setTaskProgress(
+      dateKey(event.date),
+      event.taskId,
+      event.progress,
+    );
+    final completions = await _repository.loadCompletions();
+    emit(state.buildWith(completions: completions));
+  }
+}
