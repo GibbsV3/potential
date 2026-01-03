@@ -1,4 +1,5 @@
 import '../domain/routine.dart';
+import '../domain/weekday.dart';
 import 'task_model.dart';
 
 class RoutineModel extends Routine {
@@ -16,7 +17,10 @@ class RoutineModel extends Routine {
       id: json['id'] as String,
       title: json['title'] as String,
       weight: (json['weight'] as num).toDouble(),
-      weekdays: (json['weekdays'] as List<dynamic>).cast<int>(),
+      weekdays: ((json['weekdays'] as List<dynamic>?) ?? const <dynamic>[])
+          .map(Weekday.fromJson)
+          .whereType<Weekday>()
+          .toSet(),
       tasks: (json['tasks'] as List<dynamic>)
           .map((item) => TaskModel.fromJson(item as Map<String, dynamic>))
           .toList(),
@@ -29,7 +33,7 @@ class RoutineModel extends Routine {
       'id': id,
       'title': title,
       'weight': weight,
-      'weekdays': weekdays,
+      'weekdays': weekdays.map((day) => day.number).toList(),
       'tasks': tasks
           .map((task) => TaskModel(
                 id: task.id,

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../design_system/design_system.dart';
 import '../../dashboard/data/dashboard_repository.dart';
 import '../../dashboard/domain/routine.dart';
+import '../../dashboard/domain/weekday.dart';
 import 'bloc/routines_bloc.dart';
 
 class RoutinesPage extends StatelessWidget {
@@ -306,19 +307,11 @@ void _showAddRoutinePlaceholder(BuildContext context) {
   );
 }
 
-String _formatWeekdays(List<int> weekdays) {
-  const lookup = {
-    1: 'Mon',
-    2: 'Tue',
-    3: 'Wed',
-    4: 'Thu',
-    5: 'Fri',
-    6: 'Sat',
-    7: 'Sun',
-  };
-  if (weekdays.length == 7) {
+String _formatWeekdays(Set<Weekday> weekdays) {
+  if (weekdays.length == Weekday.values.length) {
     return 'Every day';
   }
-  final sorted = weekdays.toList()..sort();
-  return sorted.map((day) => lookup[day] ?? '').where((v) => v.isNotEmpty).join(', ');
+  final sorted = weekdays.toList()
+    ..sort((a, b) => a.number.compareTo(b.number));
+  return sorted.map((day) => day.shortLabel).join(', ');
 }

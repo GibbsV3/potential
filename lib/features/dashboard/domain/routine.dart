@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'task.dart';
+import 'weekday.dart';
 
 class Routine extends Equatable {
   const Routine({
@@ -15,7 +16,7 @@ class Routine extends Equatable {
   final String id;
   final String title;
   final double weight;
-  final List<int> weekdays;
+  final Set<Weekday> weekdays;
   final List<Task> tasks;
   final bool isActive;
 

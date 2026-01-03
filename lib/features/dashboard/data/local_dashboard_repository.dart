@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../domain/routine.dart';
 import '../domain/task.dart';
+import '../domain/weekday.dart';
 import 'dashboard_local_store.dart';
 import 'dashboard_repository.dart';
 import 'routine_model.dart';
@@ -119,7 +120,13 @@ class LocalDashboardRepository extends DashboardRepository {
         id: 'routine-work',
         title: 'Work',
         weight: 0.6,
-        weekdays: [1, 2, 3, 4, 5],
+        weekdays: {
+          Weekday.monday,
+          Weekday.tuesday,
+          Weekday.wednesday,
+          Weekday.thursday,
+          Weekday.friday,
+        },
         tasks: [
           Task(id: 'task-design', title: 'Design Presentation', weight: 0.55),
           Task(id: 'task-meeting', title: 'Team Meeting', weight: 0.45),
@@ -130,7 +137,15 @@ class LocalDashboardRepository extends DashboardRepository {
         id: 'routine-personal',
         title: 'Personal',
         weight: 0.4,
-        weekdays: [1, 2, 3, 4, 5, 6, 7],
+        weekdays: {
+          Weekday.monday,
+          Weekday.tuesday,
+          Weekday.wednesday,
+          Weekday.thursday,
+          Weekday.friday,
+          Weekday.saturday,
+          Weekday.sunday,
+        },
         tasks: [
           Task(id: 'task-grocery', title: 'Grocery Shopping', weight: 1.0),
         ],

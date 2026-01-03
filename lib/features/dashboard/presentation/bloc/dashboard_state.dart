@@ -68,10 +68,11 @@ class DashboardState extends Equatable {
     final resolvedDate = _normalizeDate(selectedDate ?? this.selectedDate);
     final resolvedRoutines = routines ?? this.routines;
     final resolvedCompletions = completions ?? this.completions;
+    final resolvedWeekday = Weekday.fromDate(resolvedDate);
     final filteredRoutines = resolvedRoutines
         .where((routine) =>
             routine.isActive &&
-            routine.weekdays.contains(resolvedDate.weekday))
+            routine.weekdays.contains(resolvedWeekday))
         .toList();
     final dayCompletions =
         _completionsForDate(resolvedDate, resolvedCompletions);
@@ -94,10 +95,11 @@ class DashboardState extends Equatable {
 
   double progressForDate(DateTime date) {
     final normalizedDate = _normalizeDate(date);
+    final normalizedWeekday = Weekday.fromDate(normalizedDate);
     final routinesForDate = routines
         .where((routine) =>
             routine.isActive &&
-            routine.weekdays.contains(normalizedDate.weekday))
+            routine.weekdays.contains(normalizedWeekday))
         .toList();
     if (routinesForDate.isEmpty) {
       return 0;
