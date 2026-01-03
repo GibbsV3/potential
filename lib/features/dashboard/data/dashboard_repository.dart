@@ -10,4 +10,7 @@ abstract class DashboardRepository {
     String taskId,
     double progress,
   );
+  Stream<List<Routine>> watchRoutines();
+  Future<void> setRoutineActive(String routineId, bool isActive);
+  Future<void> deleteRoutine(String routineId);
 }

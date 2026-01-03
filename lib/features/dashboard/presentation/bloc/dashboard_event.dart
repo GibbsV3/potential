@@ -47,3 +47,12 @@ final class DashboardTaskProgressChanged extends DashboardEvent {
   @override
   List<Object?> get props => [date, taskId, progress];
 }
+
+final class DashboardRoutinesUpdated extends DashboardEvent {
+  const DashboardRoutinesUpdated(this.routines);
+
+  final List<Routine> routines;
+
+  @override
+  List<Object?> get props => [routines];
+}

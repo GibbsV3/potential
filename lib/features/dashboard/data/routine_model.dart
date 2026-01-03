@@ -8,6 +8,7 @@ class RoutineModel extends Routine {
     required super.weight,
     required super.weekdays,
     required super.tasks,
+    required super.isActive,
   });
 
   factory RoutineModel.fromJson(Map<String, dynamic> json) {
@@ -19,6 +20,7 @@ class RoutineModel extends Routine {
       tasks: (json['tasks'] as List<dynamic>)
           .map((item) => TaskModel.fromJson(item as Map<String, dynamic>))
           .toList(),
+      isActive: (json['isActive'] as bool?) ?? true,
     );
   }
 
@@ -36,6 +38,7 @@ class RoutineModel extends Routine {
               ))
           .map((task) => task.toJson())
           .toList(),
+      'isActive': isActive,
     };
   }
 }

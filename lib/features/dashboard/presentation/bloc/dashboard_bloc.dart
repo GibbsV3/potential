@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,9 +18,15 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     on<DashboardDateSelected>(_onDateSelected);
     on<DashboardTaskToggled>(_onTaskToggled);
     on<DashboardTaskProgressChanged>(_onTaskProgressChanged);
+    on<DashboardRoutinesUpdated>(_onRoutinesUpdated);
+    _routineSubscription =
+        _repository.watchRoutines().listen((routines) {
+      add(DashboardRoutinesUpdated(routines));
+    });
   }
 
   final DashboardRepository _repository;
+  late final StreamSubscription<List<Routine>> _routineSubscription;
 
   Future<void> _onLoaded(
     DashboardLoaded event,
@@ -75,5 +83,24 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     );
     final completions = await _repository.loadCompletions();
     emit(state.buildWith(completions: completions));
+  }
+
+  Future<void> _onRoutinesUpdated(
+    DashboardRoutinesUpdated event,
+    Emitter<DashboardState> emit,
+  ) async {
+    final completions = await _repository.loadCompletions();
+    emit(
+      state.buildWith(
+        routines: event.routines,
+        completions: completions,
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _routineSubscription.cancel();
+    return super.close();
   }
 }

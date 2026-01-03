@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../domain/routine.dart';
 import '../domain/task.dart';
 import 'dashboard_local_store.dart';
@@ -8,6 +10,10 @@ class LocalDashboardRepository extends DashboardRepository {
   LocalDashboardRepository(this._store);
 
   final DashboardLocalStore _store;
+  late final StreamController<List<Routine>> _routinesController =
+      StreamController<List<Routine>>.broadcast(
+    onListen: _emitRoutines,
+  );
 
   List<Routine>? _routines;
   Map<String, Map<String, double>>? _completions;
@@ -15,25 +21,17 @@ class LocalDashboardRepository extends DashboardRepository {
   @override
   Future<List<Routine>> loadRoutines() async {
     if (_routines != null) {
+      _emitRoutines();
       return _routines!;
     }
     final stored = _store.readRoutines();
     if (stored != null && stored.isNotEmpty) {
       _routines = stored;
-      return _routines!;
+    } else {
+      _routines = _seedRoutines();
+      await _persistRoutines();
     }
-    _routines = _seedRoutines();
-    await _store.saveRoutines(
-      _routines!
-          .map((routine) => RoutineModel(
-                id: routine.id,
-                title: routine.title,
-                weight: routine.weight,
-                weekdays: routine.weekdays,
-                tasks: routine.tasks,
-              ))
-          .toList(),
-    );
+    _emitRoutines();
     return _routines!;
   }
 
@@ -60,6 +58,61 @@ class LocalDashboardRepository extends DashboardRepository {
     await _store.saveCompletions(completions);
   }
 
+  @override
+  Stream<List<Routine>> watchRoutines() {
+    _emitRoutines();
+    return _routinesController.stream;
+  }
+
+  @override
+  Future<void> setRoutineActive(String routineId, bool isActive) async {
+    final routines = await loadRoutines();
+    _routines = routines
+        .map(
+          (routine) => routine.id == routineId
+              ? Routine(
+                  id: routine.id,
+                  title: routine.title,
+                  weight: routine.weight,
+                  weekdays: routine.weekdays,
+                  tasks: routine.tasks,
+                  isActive: isActive,
+                )
+              : routine,
+        )
+        .toList();
+    await _persistRoutines();
+    _emitRoutines();
+  }
+
+  @override
+  Future<void> deleteRoutine(String routineId) async {
+    final routines = await loadRoutines();
+    final routineToDelete =
+        routines.firstWhere((routine) => routine.id == routineId);
+    final taskIds = routineToDelete.tasks.map((task) => task.id).toSet();
+    _routines = routines.where((routine) => routine.id != routineId).toList();
+    await _persistRoutines();
+
+    final completions = await loadCompletions();
+    bool completionsChanged = false;
+    final cleaned = <String, Map<String, double>>{};
+    for (final entry in completions.entries) {
+      final filteredTasks = Map<String, double>.from(entry.value)
+        ..removeWhere((taskId, _) => taskIds.contains(taskId));
+      if (filteredTasks.isNotEmpty) {
+        cleaned[entry.key] = filteredTasks;
+      }
+      completionsChanged =
+          completionsChanged || filteredTasks.length != entry.value.length;
+    }
+    if (completionsChanged) {
+      _completions = cleaned;
+      await _store.saveCompletions(cleaned);
+    }
+    _emitRoutines();
+  }
+
   List<Routine> _seedRoutines() {
     return const [
       Routine(
@@ -71,6 +124,7 @@ class LocalDashboardRepository extends DashboardRepository {
           Task(id: 'task-design', title: 'Design Presentation', weight: 0.55),
           Task(id: 'task-meeting', title: 'Team Meeting', weight: 0.45),
         ],
+        isActive: true,
       ),
       Routine(
         id: 'routine-personal',
@@ -80,7 +134,35 @@ class LocalDashboardRepository extends DashboardRepository {
         tasks: [
           Task(id: 'task-grocery', title: 'Grocery Shopping', weight: 1.0),
         ],
+        isActive: true,
       ),
     ];
+  }
+
+  Future<void> _persistRoutines() async {
+    if (_routines == null) {
+      return;
+    }
+    await _store.saveRoutines(
+      _routines!
+          .map(
+            (routine) => RoutineModel(
+              id: routine.id,
+              title: routine.title,
+              weight: routine.weight,
+              weekdays: routine.weekdays,
+              tasks: routine.tasks,
+              isActive: routine.isActive,
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  void _emitRoutines() {
+    if (_routines == null || _routinesController.isClosed) {
+      return;
+    }
+    _routinesController.add(List<Routine>.unmodifiable(_routines!));
   }
 }

@@ -9,6 +9,7 @@ class Routine extends Equatable {
     required this.weight,
     required this.weekdays,
     required this.tasks,
+    required this.isActive,
   });
 
   final String id;
@@ -16,7 +17,8 @@ class Routine extends Equatable {
   final double weight;
   final List<int> weekdays;
   final List<Task> tasks;
+  final bool isActive;
 
   @override
-  List<Object> get props => [id, title, weight, weekdays, tasks];
+  List<Object> get props => [id, title, weight, weekdays, tasks, isActive];
 }
