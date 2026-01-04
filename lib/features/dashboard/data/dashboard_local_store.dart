@@ -1,20 +1,65 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'package:potential/potential.dart';
 
+/// Simple key-value SQLite store to keep the existing repository API.
 class DashboardLocalStore {
-  DashboardLocalStore(this._prefs);
+  DashboardLocalStore(this._db);
 
-  final SharedPreferences _prefs;
+  final Database _db;
+
+  static const _table = 'kv_store';
 
   static const _routinesKey = 'dashboard_routines_v1';
   static const _completionsKey = 'dashboard_completions_v1';
   static const _routinesByDateKey = 'dashboard_routines_by_date_v1';
 
-  List<RoutineModel>? readRoutines() {
-    final raw = _prefs.getString(_routinesKey);
+  static Future<DashboardLocalStore> open() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'potential.db');
+    final db = await openDatabase(
+      path,
+      version: 1,
+      onCreate: (database, version) async {
+        await database.execute(
+          '''
+          CREATE TABLE $_table (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          )
+          ''',
+        );
+      },
+    );
+    return DashboardLocalStore(db);
+  }
+
+  Future<void> _setString(String key, String value) async {
+    await _db.insert(
+      _table,
+      {'key': key, 'value': value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<String?> _getString(String key) async {
+    final rows = await _db.query(
+      _table,
+      where: 'key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return rows.first['value'] as String?;
+  }
+
+  Future<List<RoutineModel>?> readRoutines() async {
+    final raw = await _getString(_routinesKey);
     if (raw == null) {
       return null;
     }
@@ -26,11 +71,11 @@ class DashboardLocalStore {
 
   Future<void> saveRoutines(List<RoutineModel> routines) async {
     final encoded = jsonEncode(routines.map((item) => item.toJson()).toList());
-    await _prefs.setString(_routinesKey, encoded);
+    await _setString(_routinesKey, encoded);
   }
 
-  Map<String, Map<String, double>>? readCompletions() {
-    final raw = _prefs.getString(_completionsKey);
+  Future<Map<String, Map<String, double>>?> readCompletions() async {
+    final raw = await _getString(_completionsKey);
     if (raw == null) {
       return null;
     }
@@ -53,11 +98,11 @@ class DashboardLocalStore {
     Map<String, Map<String, double>> completions,
   ) async {
     final encoded = jsonEncode(completions);
-    await _prefs.setString(_completionsKey, encoded);
+    await _setString(_completionsKey, encoded);
   }
 
-  Map<String, List<RoutineModel>>? readRoutinesByDate() {
-    final raw = _prefs.getString(_routinesByDateKey);
+  Future<Map<String, List<RoutineModel>>?> readRoutinesByDate() async {
+    final raw = await _getString(_routinesByDateKey);
     if (raw == null) {
       return null;
     }
@@ -81,6 +126,6 @@ class DashboardLocalStore {
         ),
       ),
     );
-    await _prefs.setString(_routinesByDateKey, encoded);
+    await _setString(_routinesByDateKey, encoded);
   }
 }

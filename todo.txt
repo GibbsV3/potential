@@ -1,0 +1,2 @@
+- Loading all routinesByDate on first access introduces a potential memory issue if either the data per date grows in size or
+    the number of dates increase. Fix this. Options include limiting the cached window, loading on demand, or moving to a paged store.

@@ -21,7 +21,7 @@ class LocalDashboardRepository extends DashboardRepository {
       _emitRoutines();
       return _routines!;
     }
-    final stored = _store.readRoutines();
+    final stored = await _store.readRoutines();
     _routines = stored != null ? List<Routine>.from(stored) : <Routine>[];
     _emitRoutines();
     return _routines!;
@@ -32,7 +32,8 @@ class LocalDashboardRepository extends DashboardRepository {
     if (_completions != null) {
       return _completions!;
     }
-    _completions = _store.readCompletions() ?? <String, Map<String, double>>{};
+    _completions =
+        await _store.readCompletions() ?? <String, Map<String, double>>{};
     await _ensureSnapshotsForDates(_completions!.keys);
     return _completions!;
   }
@@ -42,7 +43,7 @@ class LocalDashboardRepository extends DashboardRepository {
     if (_routinesByDate != null) {
       return _routinesByDate!;
     }
-    final stored = _store.readRoutinesByDate();
+    final stored = await _store.readRoutinesByDate();
     _routinesByDate = stored?.map(
           (date, routines) => MapEntry(
             date,
