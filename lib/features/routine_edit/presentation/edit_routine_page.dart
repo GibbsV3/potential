@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/data/dashboard_repository.dart';
-import '../../../core/domain/routine_importance.dart';
+import '../../../core/domain/priority.dart';
 import '../../../core/domain/task.dart';
 import '../../../core/domain/weekday.dart';
 import '../../../design_system/design_system.dart';
@@ -149,7 +149,7 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
               children: [
                 _buildDetailsSection(context, state),
                 const SizedBox(height: AppSpace.l),
-                _buildImportanceSection(context, state),
+                _buildPrioritySection(context, state),
                 const SizedBox(height: AppSpace.l),
                 _buildWeekdaySection(context, state),
                 const SizedBox(height: AppSpace.l),
@@ -189,7 +189,7 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
     );
   }
 
-  Widget _buildImportanceSection(
+  Widget _buildPrioritySection(
     BuildContext context,
     EditRoutineState state,
   ) {
@@ -203,25 +203,25 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
             AppSpace.l,
             AppSpace.xs,
           ),
-        child: Text(
-          'Importance',
-          style: AppTextStyle.body(context).copyWith(
-            fontWeight: FontWeight.w700,
+          child: Text(
+            'Priority',
+            style: AppTextStyle.body(context).copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
-      ),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpace.l,
             vertical: AppSpace.m,
           ),
-          child: _ImportanceSelector(
-            value: state.importance,
-            onChanged: (importance) {
-              if (importance != null) {
+          child: _PrioritySelector(
+            value: state.priority,
+            onChanged: (priority) {
+              if (priority != null) {
                 HapticFeedback.selectionClick();
                 context.read<EditRoutineBloc>().add(
-                      EditRoutineImportanceChanged(importance),
+                      EditRoutinePriorityChanged(priority),
                     );
               }
             },
@@ -463,14 +463,14 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
   }
 }
 
-class _ImportanceSelector extends StatelessWidget {
-  const _ImportanceSelector({
+class _PrioritySelector extends StatelessWidget {
+  const _PrioritySelector({
     required this.value,
     required this.onChanged,
   });
 
-  final RoutineImportance value;
-  final ValueChanged<RoutineImportance?> onChanged;
+  final Priority value;
+  final ValueChanged<Priority?> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -484,7 +484,7 @@ class _ImportanceSelector extends StatelessWidget {
     return Row(
       children: [
         Text(
-          'Least',
+          'Lowest',
           style: AppTextStyle.footnote(context).copyWith(
             color: labelColor,
           ),
@@ -494,8 +494,8 @@ class _ImportanceSelector extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              for (final option in RoutineImportance.values)
-                _ImportanceDot(
+              for (final option in Priority.values)
+                _PriorityDot(
                   isSelected: value == option,
                   size: 22,
                   color: _colorFor(option, resolvedAccent, neutral),
@@ -509,7 +509,7 @@ class _ImportanceSelector extends StatelessWidget {
         ),
         const SizedBox(width: AppSpace.m),
         Text(
-          'Most',
+          'Highest',
           style: AppTextStyle.footnote(context).copyWith(
             color: labelColor,
           ),
@@ -519,17 +519,17 @@ class _ImportanceSelector extends StatelessWidget {
   }
 
   Color _colorFor(
-    RoutineImportance importance,
+    Priority priority,
     Color accent,
     Color neutral,
   ) {
-    final intensity = importance.level / RoutineImportance.values.last.level;
+    final intensity = priority.level / Priority.values.last.level;
     return Color.lerp(neutral, accent, intensity.clamp(0, 1)) ?? accent;
   }
 }
 
-class _ImportanceDot extends StatelessWidget {
-  const _ImportanceDot({
+class _PriorityDot extends StatelessWidget {
+  const _PriorityDot({
     required this.isSelected,
     required this.size,
     required this.color,
@@ -711,11 +711,10 @@ class _TaskSheet extends StatefulWidget {
 class _TaskSheetState extends State<_TaskSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _detailsController;
-  late RoutineImportance _importance;
+  late Priority _priority;
   double? _dragStartY;
   double _dragExtent = 0;
   bool _isDragging = false;
-  bool _showDeleteConfirm = false;
 
   @override
   void initState() {
@@ -723,7 +722,7 @@ class _TaskSheetState extends State<_TaskSheet> {
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _detailsController =
         TextEditingController(text: widget.task?.details ?? '');
-    _importance = widget.task?.importance ?? RoutineImportance.medium;
+    _priority = widget.task?.priority ?? Priority.medium;
   }
 
   @override
@@ -735,8 +734,6 @@ class _TaskSheetState extends State<_TaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final dividerColor =
-        CupertinoDynamicColor.resolve(AppColor.separator, context);
     final background = CupertinoDynamicColor.resolve(
       AppColor.systemBackground,
       context,
@@ -892,7 +889,7 @@ class _TaskSheetState extends State<_TaskSheet> {
                               ),
                               const SizedBox(height: AppSpace.l),
                               Text(
-                                'Importance',
+                                'Priority',
                                 style: AppTextStyle.body(context).copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -901,13 +898,13 @@ class _TaskSheetState extends State<_TaskSheet> {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: AppSpace.m,
                                 ),
-                                child: _ImportanceSelector(
-                                  value: _importance,
+                                child: _PrioritySelector(
+                                  value: _priority,
                                   onChanged: (value) {
                                     if (value != null) {
                                       HapticFeedback.selectionClick();
                                       setState(() {
-                                        _importance = value;
+                                        _priority = value;
                                       });
                                     }
                                   },
@@ -987,7 +984,7 @@ class _TaskSheetState extends State<_TaskSheet> {
             taskId: widget.task?.id,
             title: title,
             details: details,
-            importance: _importance,
+            priority: _priority,
           ),
         );
     Navigator.of(context).pop();

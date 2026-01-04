@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../core/data/dashboard_repository.dart';
 import '../../../core/domain/routine.dart';
-import '../../../core/domain/routine_importance.dart';
+import '../../../core/domain/priority.dart';
 import '../../../core/domain/task.dart';
 import '../../../core/domain/weekday.dart';
 
@@ -15,7 +15,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
     on<EditRoutineStarted>(_onStarted);
     on<EditRoutineTitleChanged>(_onTitleChanged);
     on<EditRoutineWeekdayToggled>(_onWeekdayToggled);
-    on<EditRoutineImportanceChanged>(_onImportanceChanged);
+    on<EditRoutinePriorityChanged>(_onPriorityChanged);
     on<EditRoutineTaskAdded>(_onTaskAdded);
     on<EditRoutineTaskRemoved>(_onTaskRemoved);
     on<EditRoutineTaskTitleChanged>(_onTaskTitleChanged);
@@ -46,7 +46,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
           title: routine.title,
           weekdays: Set<Weekday>.from(routine.weekdays),
           tasks: List<Task>.from(routine.tasks),
-          importance: routine.importance,
+          priority: routine.priority,
           weight: routine.weight,
           isActive: routine.isActive,
         ),
@@ -89,13 +89,13 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
     );
   }
 
-  void _onImportanceChanged(
-    EditRoutineImportanceChanged event,
+  void _onPriorityChanged(
+    EditRoutinePriorityChanged event,
     Emitter<EditRoutineState> emit,
   ) {
     emit(
       state.copyWith(
-        importance: event.importance,
+        priority: event.priority,
       ),
     );
   }
@@ -110,8 +110,8 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
           id: _newTaskId(),
           title: _defaultTaskTitle(state.tasks.length + 1),
           details: '',
-          importance: RoutineImportance.medium,
-          weight: weightForImportance(RoutineImportance.medium),
+          priority: Priority.medium,
+          weight: weightForPriority(Priority.medium),
         ),
       );
     emit(
@@ -144,7 +144,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
           title: event.title,
           weight: task.weight,
           details: task.details,
-          importance: task.importance,
+          priority: task.priority,
         );
       }
       return task;
@@ -169,7 +169,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
         id: state.routineId,
         title: state.title.trim(),
         weight: state.weight,
-        importance: state.importance,
+        priority: state.priority,
         weekdays: Set<Weekday>.from(state.weekdays),
         tasks: state.tasks
             .map(
@@ -178,7 +178,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
                 title: task.title.trim(),
                 weight: task.weight,
                 details: task.details,
-                importance: task.importance,
+                priority: task.priority,
               ),
             )
             .toList(),
@@ -209,7 +209,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
       return;
     }
     final updated = List<Task>.from(state.tasks);
-    final weight = weightForImportance(event.importance);
+    final weight = weightForPriority(event.priority);
 
     if (event.taskId == null) {
       updated.add(
@@ -218,7 +218,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
           title: title,
           weight: weight,
           details: event.details.trim(),
-          importance: event.importance,
+          priority: event.priority,
         ),
       );
     } else {
@@ -229,7 +229,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
           title: title,
           weight: weight,
           details: event.details.trim(),
-          importance: event.importance,
+          priority: event.priority,
         );
       } else {
         updated.add(
@@ -238,7 +238,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
             title: title,
             weight: weight,
             details: event.details.trim(),
-            importance: event.importance,
+            priority: event.priority,
           ),
         );
       }
@@ -263,11 +263,11 @@ EditRoutineState _freshState() {
         id: _newTaskId(),
         title: _defaultTaskTitle(1),
         details: '',
-        importance: RoutineImportance.medium,
-        weight: weightForImportance(RoutineImportance.medium),
+        priority: Priority.medium,
+        weight: weightForPriority(Priority.medium),
       ),
     ],
-    importance: RoutineImportance.medium,
+    priority: Priority.medium,
     weight: 1.0,
     isActive: true,
     errorMessage: null,

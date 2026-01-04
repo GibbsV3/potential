@@ -42,7 +42,7 @@ Speed is prioritized, but code quality must remain **FAANG-level clean**.
 ### Core concept
 - The app tracks **daily “% of goals achieved”**.
 - Users can define **routines** and **tasks** for those routines.
-- Users can assign **importance/weight** to routines/tasks; the daily score reflects that weighting.
+- Users can assign **priority/weight** to routines/tasks; the daily score reflects that weighting.
 - Users can customize routines **throughout the week** (day-by-day applicability).
 
 ### MVP scope
@@ -150,7 +150,7 @@ Keep it brief. This is to ensure traceability and alignment.
 Before implementing a screen/feature, ask questions such as:
 - What is the **single primary action** on this screen?
 - What is the **source of truth** for progress (%): tasks completed, weighted tasks, weighted routines, or both?
-- How should **importance/weight** behave?
+- How should **priority/weight** behave?
   - linear multiplier? capped? normalized daily to 100?
 - Weekly customization:
   - routines assigned per weekday, or tasks vary by weekday?

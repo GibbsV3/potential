@@ -29,15 +29,15 @@
   Open questions: What is the desired add-routine flow (fields, default weights/tasks, week assignment)?
 
 - Context: Edit routine screen
-  What screenshot suggested: Tasks split by routine with a floating bottom add button, squared day chips, and no explicit importance control.
-  What we implemented: Cupertino modal edit form with Cancel/Save nav buttons, inset grouped sections, a single Tasks header with an inline add button, capsule weekday chips, and a 5-segment importance selector (stored but not yet used in scoring).
+  What screenshot suggested: Tasks split by routine with a floating bottom add button, squared day chips, and no explicit priority control.
+  What we implemented: Cupertino modal edit form with Cancel/Save nav buttons, inset grouped sections, a single Tasks header with an inline add button, capsule weekday chips, and a 5-segment priority selector (stored but not yet used in scoring).
   Why: iOS HIG - Forms (modal sheets with Cancel/Save), Lists and Tables (inset grouped sections for settings-style input), Controls (segmented chips for multi-select days), and primary action placement for inline add instead of floating FAB.
-  Tradeoffs: Tasks are flat instead of grouped; add button is inline rather than floating; importance is captured but not yet applied to calculations.
-  Open questions: Should Save auto-dismiss without confirmation? How should importance map to routine weighting? Should task ordering be editable?
+  Tradeoffs: Tasks are flat instead of grouped; add button is inline rather than floating; priority is captured but not yet applied to calculations.
+  Open questions: Should Save auto-dismiss without confirmation? How should priority map to routine weighting? Should task ordering be editable?
 
 - Context: Task add/edit sheet
   What screenshot suggested: Full-screen form with title, description, weight, notes, and a bottom navigation bar.
-  What we implemented: A Cupertino modal sheet presented full screen with task name, importance selector, and a multiline details field; weight input and the bottom navigation bar were removed.
-  Why: iOS HIG - Modality and Sheets (use full-screen modals for focused edits) and System Controls (keep weighting via existing importance control to avoid redundant inputs).
-  Tradeoffs: Weight now derives from importance levels instead of manual entry.
+  What we implemented: A Cupertino modal sheet presented full screen with task name, priority selector, and a multiline details field; weight input and the bottom navigation bar were removed.
+  Why: iOS HIG - Modality and Sheets (use full-screen modals for focused edits) and System Controls (keep weighting via existing priority control to avoid redundant inputs).
+  Tradeoffs: Weight now derives from priority levels instead of manual entry.
   Open questions: Should tasks support richer metadata like checklists or due times?

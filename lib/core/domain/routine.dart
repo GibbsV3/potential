@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'routine_importance.dart';
+import 'priority.dart';
 import 'task.dart';
 import 'weekday.dart';
 
@@ -9,7 +9,7 @@ class Routine extends Equatable {
     required this.id,
     required this.title,
     required this.weight,
-    required this.importance,
+    required this.priority,
     required this.weekdays,
     required this.tasks,
     required this.isActive,
@@ -18,7 +18,7 @@ class Routine extends Equatable {
   final String id;
   final String title;
   final double weight;
-  final RoutineImportance importance;
+  final Priority priority;
   final Set<Weekday> weekdays;
   final List<Task> tasks;
   final bool isActive;
@@ -28,7 +28,7 @@ class Routine extends Equatable {
         id,
         title,
         weight,
-        importance,
+        priority,
         weekdays,
         tasks,
         isActive,

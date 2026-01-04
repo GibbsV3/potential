@@ -1,5 +1,5 @@
 import '../../../core/domain/routine.dart';
-import '../../../core/domain/routine_importance.dart';
+import '../../../core/domain/priority.dart';
 import '../../../core/domain/weekday.dart';
 import 'task_model.dart';
 
@@ -8,7 +8,7 @@ class RoutineModel extends Routine {
     required super.id,
     required super.title,
     required super.weight,
-    required super.importance,
+    required super.priority,
     required super.weekdays,
     required super.tasks,
     required super.isActive,
@@ -19,8 +19,8 @@ class RoutineModel extends Routine {
       id: json['id'] as String,
       title: json['title'] as String,
       weight: (json['weight'] as num).toDouble(),
-      importance: RoutineImportance.fromLevel(
-        (json['importance'] as num?)?.toInt(),
+      priority: Priority.fromLevel(
+        (json['priority'] as num? ?? json['importance'] as num?)?.toInt(),
       ),
       weekdays: ((json['weekdays'] as List<dynamic>?) ?? const <dynamic>[])
           .map(Weekday.fromJson)
@@ -38,7 +38,7 @@ class RoutineModel extends Routine {
       'id': id,
       'title': title,
       'weight': weight,
-      'importance': importance.level,
+      'priority': priority.level,
       'weekdays': weekdays.map((day) => day.number).toList(),
       'tasks': tasks
           .map((task) => TaskModel(
@@ -46,7 +46,7 @@ class RoutineModel extends Routine {
                 title: task.title,
                 weight: task.weight,
                 details: task.details,
-                importance: task.importance,
+                priority: task.priority,
               ))
           .map((task) => task.toJson())
           .toList(),

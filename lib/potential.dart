@@ -3,7 +3,7 @@ export 'app/router.dart';
 export 'app/tabs_page.dart';
 export 'core/data/dashboard_repository.dart';
 export 'core/domain/routine.dart';
-export 'core/domain/routine_importance.dart';
+export 'core/domain/priority.dart';
 export 'core/domain/task.dart';
 export 'core/domain/weekday.dart';
 export 'design_system/app_color.dart';

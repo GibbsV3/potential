@@ -34,13 +34,13 @@ final class EditRoutineWeekdayToggled extends EditRoutineEvent {
   List<Object?> get props => [weekday];
 }
 
-final class EditRoutineImportanceChanged extends EditRoutineEvent {
-  const EditRoutineImportanceChanged(this.importance);
+final class EditRoutinePriorityChanged extends EditRoutineEvent {
+  const EditRoutinePriorityChanged(this.priority);
 
-  final RoutineImportance importance;
+  final Priority priority;
 
   @override
-  List<Object?> get props => [importance];
+  List<Object?> get props => [priority];
 }
 
 final class EditRoutineTaskAdded extends EditRoutineEvent {
@@ -74,16 +74,16 @@ final class EditRoutineTaskSubmitted extends EditRoutineEvent {
     this.taskId,
     required this.title,
     required this.details,
-    required this.importance,
+    required this.priority,
   });
 
   final String? taskId;
   final String title;
   final String details;
-  final RoutineImportance importance;
+  final Priority priority;
 
   @override
-  List<Object?> get props => [taskId, title, details, importance];
+  List<Object?> get props => [taskId, title, details, priority];
 }
 
 final class EditRoutineSaved extends EditRoutineEvent {

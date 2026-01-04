@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'routine_importance.dart';
+import 'priority.dart';
 
 class Task extends Equatable {
   const Task({
@@ -8,26 +8,26 @@ class Task extends Equatable {
     required this.title,
     required this.weight,
     this.details = '',
-    this.importance = RoutineImportance.medium,
+    this.priority = Priority.medium,
   });
 
   final String id;
   final String title;
   final double weight;
   final String details;
-  final RoutineImportance importance;
+  final Priority priority;
 
   @override
-  List<Object> get props => [id, title, weight, details, importance];
+  List<Object> get props => [id, title, weight, details, priority];
 }
 
-double weightForImportance(RoutineImportance importance) {
-  return importance.level.toDouble();
+double weightForPriority(Priority priority) {
+  return priority.level.toDouble();
 }
 
-RoutineImportance importanceForWeight(double weight) {
-  final maxLevel = RoutineImportance.values.last.level.toDouble();
+Priority priorityForWeight(double weight) {
+  final maxLevel = Priority.values.last.level.toDouble();
   final normalized = weight <= 1.0 ? weight * maxLevel : weight;
   final clamped = normalized.clamp(1, maxLevel).round();
-  return RoutineImportance.fromLevel(clamped);
+  return Priority.fromLevel(clamped);
 }

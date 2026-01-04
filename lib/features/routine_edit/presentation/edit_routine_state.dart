@@ -9,7 +9,7 @@ class EditRoutineState extends Equatable {
     required this.title,
     required this.weekdays,
     required this.tasks,
-    required this.importance,
+    required this.priority,
     required this.weight,
     required this.isActive,
     this.errorMessage,
@@ -21,7 +21,7 @@ class EditRoutineState extends Equatable {
         title = '',
         weekdays = const {},
         tasks = const [],
-        importance = RoutineImportance.medium,
+        priority = Priority.medium,
         weight = 1.0,
         isActive = true,
         errorMessage = null;
@@ -31,7 +31,7 @@ class EditRoutineState extends Equatable {
   final String title;
   final Set<Weekday> weekdays;
   final List<Task> tasks;
-  final RoutineImportance importance;
+  final Priority priority;
   final double weight;
   final bool isActive;
   final String? errorMessage;
@@ -50,7 +50,7 @@ class EditRoutineState extends Equatable {
     String? title,
     Set<Weekday>? weekdays,
     List<Task>? tasks,
-    RoutineImportance? importance,
+    Priority? priority,
     double? weight,
     bool? isActive,
     String? errorMessage,
@@ -61,7 +61,7 @@ class EditRoutineState extends Equatable {
       title: title ?? this.title,
       weekdays: weekdays ?? this.weekdays,
       tasks: tasks ?? this.tasks,
-      importance: importance ?? this.importance,
+      priority: priority ?? this.priority,
       weight: weight ?? this.weight,
       isActive: isActive ?? this.isActive,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -75,7 +75,7 @@ class EditRoutineState extends Equatable {
         title,
         weekdays,
         tasks,
-        importance,
+        priority,
         weight,
         isActive,
         errorMessage,

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../../../core/data/dashboard_repository.dart';
 import '../../../core/domain/routine.dart';
-import '../../../core/domain/routine_importance.dart';
+import '../../../core/domain/priority.dart';
 import '../../../core/domain/task.dart';
 import '../../../core/domain/weekday.dart';
 import 'dashboard_local_store.dart';
@@ -76,7 +76,7 @@ class LocalDashboardRepository extends DashboardRepository {
                   id: routine.id,
                   title: routine.title,
                   weight: routine.weight,
-                  importance: routine.importance,
+                  priority: routine.priority,
                   weekdays: routine.weekdays,
                   tasks: routine.tasks,
                   isActive: isActive,
@@ -168,7 +168,7 @@ class LocalDashboardRepository extends DashboardRepository {
         id: 'routine-work',
         title: 'Work',
         weight: 0.6,
-        importance: RoutineImportance.high,
+        priority: Priority.high,
         weekdays: {
           Weekday.monday,
           Weekday.tuesday,
@@ -182,14 +182,14 @@ class LocalDashboardRepository extends DashboardRepository {
             title: 'Design Presentation',
             weight: 0.55,
             details: '',
-            importance: importanceForWeight(0.55),
+            priority: priorityForWeight(0.55),
           ),
           Task(
             id: 'task-meeting',
             title: 'Team Meeting',
             weight: 0.45,
             details: '',
-            importance: importanceForWeight(0.45),
+            priority: priorityForWeight(0.45),
           ),
         ],
         isActive: true,
@@ -198,7 +198,7 @@ class LocalDashboardRepository extends DashboardRepository {
         id: 'routine-personal',
         title: 'Personal',
         weight: 0.4,
-        importance: RoutineImportance.medium,
+        priority: Priority.medium,
         weekdays: {
           Weekday.monday,
           Weekday.tuesday,
@@ -214,7 +214,7 @@ class LocalDashboardRepository extends DashboardRepository {
             title: 'Grocery Shopping',
             weight: 1.0,
             details: '',
-            importance: importanceForWeight(1.0),
+            priority: priorityForWeight(1.0),
           ),
         ],
         isActive: true,
@@ -233,7 +233,7 @@ class LocalDashboardRepository extends DashboardRepository {
               id: routine.id,
               title: routine.title,
               weight: routine.weight,
-              importance: routine.importance,
+              priority: routine.priority,
               weekdays: routine.weekdays,
               tasks: routine.tasks,
               isActive: routine.isActive,
