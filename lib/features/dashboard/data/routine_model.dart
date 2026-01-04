@@ -45,6 +45,8 @@ class RoutineModel extends Routine {
                 id: task.id,
                 title: task.title,
                 weight: task.weight,
+                details: task.details,
+                importance: task.importance,
               ))
           .map((task) => task.toJson())
           .toList(),

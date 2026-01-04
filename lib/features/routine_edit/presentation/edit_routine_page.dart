@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/data/dashboard_repository.dart';
 import '../../../core/domain/routine_importance.dart';
+import '../../../core/domain/task.dart';
 import '../../../core/domain/weekday.dart';
 import '../../../design_system/design_system.dart';
 import 'edit_routine_bloc.dart';
@@ -313,7 +314,7 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
                 minSize: 28,
                 onPressed: () {
                   HapticFeedback.selectionClick();
-                  _showTaskSheet(context, bloc, isEditing: false);
+                  _showTaskSheet(context, bloc);
                 },
                 child: Icon(
                   CupertinoIcons.add,
@@ -397,7 +398,7 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
                         onTap: () => _showTaskSheet(
                           context,
                           bloc,
-                          isEditing: true,
+                          task: state.tasks[i],
                         ),
                         onLongPress: () => _showDeleteTaskMenu(
                           context,
@@ -442,8 +443,7 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
                       Container(
                         height: 0.5,
                         margin: EdgeInsets.only(
-                          left: AppSpace.l,
-                          right: AppSpace.l,
+                          left: AppSpace.l,                          
                         ),
                         color: dividerColor,
                       ),
@@ -648,32 +648,18 @@ const List<Weekday> _sundayFirstWeekdays = [
 void _showTaskSheet(
   BuildContext context,
   EditRoutineBloc bloc, {
-  required bool isEditing,
+  Task? task,
 }) {
+  final isEditing = task != null;
+  HapticFeedback.selectionClick();
   showCupertinoModalPopup<void>(
     context: context,
     builder: (context) {
-      return CupertinoActionSheet(
-        title: Text(isEditing ? 'Edit Task' : 'New Task'),
-        message: Text(
-          'Task ${isEditing ? 'editing' : 'creation'} flow is coming soon.',
-        ),
-        actions: [
-          CupertinoActionSheetAction(
-            isDefaultAction: true,
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              if (!isEditing) {
-                bloc.add(const EditRoutineTaskAdded());
-              }
-              Navigator.of(context).pop();
-            },
-            child: Text(isEditing ? 'OK' : 'Add Task'),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+      return BlocProvider.value(
+        value: bloc,
+        child: _TaskSheet(
+          task: task,
+          title: isEditing ? 'Edit Task' : 'Add Task',
         ),
       );
     },
@@ -707,4 +693,303 @@ void _showDeleteTaskMenu(
       );
     },
   );
+}
+
+class _TaskSheet extends StatefulWidget {
+  const _TaskSheet({
+    required this.task,
+    required this.title,
+  });
+
+  final Task? task;
+  final String title;
+
+  @override
+  State<_TaskSheet> createState() => _TaskSheetState();
+}
+
+class _TaskSheetState extends State<_TaskSheet> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _detailsController;
+  late RoutineImportance _importance;
+  double? _dragStartY;
+  double _dragExtent = 0;
+  bool _isDragging = false;
+  bool _showDeleteConfirm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.task?.title ?? '');
+    _detailsController =
+        TextEditingController(text: widget.task?.details ?? '');
+    _importance = widget.task?.importance ?? RoutineImportance.medium;
+  }
+
+  @override
+  void dispose() {
+    _detailsController.dispose();
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dividerColor =
+        CupertinoDynamicColor.resolve(AppColor.separator, context);
+    final background = CupertinoDynamicColor.resolve(
+      AppColor.systemBackground,
+      context,
+    );
+    final inputBackground = CupertinoDynamicColor.resolve(
+      AppColor.secondarySystemGroupedBackground,
+      context,
+    );
+    final destructive = CupertinoColors.destructiveRed;
+    final isEditing = widget.task != null;
+    final media = MediaQuery.of(context);
+    final sheetHeight = media.size.height - media.padding.top;
+    final currentHeight =
+        (sheetHeight - _dragExtent).clamp(sheetHeight * 0.2, sheetHeight);
+
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: AnimatedContainer(
+        duration: _isDragging ? Duration.zero : AppMotion.quick,
+        height: currentHeight,
+        child: CupertinoPopupSurface(
+          isSurfacePainted: true,
+          child: AnimatedPadding(
+            duration: AppMotion.quick,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: background),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpace.l,
+                        AppSpace.m,
+                        AppSpace.l,
+                        AppSpace.s,
+                      ),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.deferToChild,
+                        onVerticalDragStart: (details) {
+                          _dragStartY = details.globalPosition.dy;
+                          _dragExtent = 0;
+                          _isDragging = true;
+                        },
+                        onVerticalDragUpdate: (details) {
+                          if (_dragStartY == null) {
+                            return;
+                          }
+                          final delta =
+                              details.globalPosition.dy - _dragStartY!;
+                          if (delta <= 0) {
+                            return;
+                          }
+                          setState(() {
+                            _dragExtent =
+                                delta.clamp(0, sheetHeight).toDouble();
+                            _isDragging = true;
+                          });
+                        },
+                        onVerticalDragCancel: () {
+                          _dragStartY = null;
+                          setState(() {
+                            _dragExtent = 0;
+                            _isDragging = false;
+                          });
+                        },
+                        onVerticalDragEnd: (details) {
+                          final velocity = details.primaryVelocity ?? 0;
+                          final dismissByVelocity = velocity > 900;
+                          final shouldDismiss =
+                              currentHeight < sheetHeight * 0.4;
+                          if (shouldDismiss || dismissByVelocity) {
+                            HapticFeedback.selectionClick();
+                            Navigator.of(context).pop();
+                          } else {
+                            setState(() {
+                              _dragExtent = 0;
+                              _isDragging = false;
+                            });
+                          }
+                          _dragStartY = null;
+                          _isDragging = false;
+                        },
+                        child: Row(
+                          children: [
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            Expanded(
+                              child: Text(
+                                widget.title,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyle.title3(context).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: _titleController.text.trim().isEmpty
+                                  ? null
+                                  : _submit,
+                              child: Text(
+                                isEditing ? 'Save' : 'Add',
+                                style: AppTextStyle.body(context).copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: _titleController.text.trim().isEmpty
+                                      ? CupertinoDynamicColor.resolve(
+                                          AppColor.secondaryLabel,
+                                          context,
+                                        )
+                                      : CupertinoDynamicColor.resolve(
+                                          AppColor.accent,
+                                          context,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),                    
+                    Expanded(
+                      child: CupertinoScrollbar(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpace.l,
+                            AppSpace.l,
+                            AppSpace.l,
+                            AppSpace.xxxl,
+                          ),
+                          children: [
+                              CupertinoTextField(
+                                controller: _titleController,
+                                placeholder: 'Task name',
+                                textInputAction: TextInputAction.done,
+                                decoration: BoxDecoration(
+                                  color: inputBackground,
+                                  borderRadius: AppRadius.card,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                                onSubmitted: (_) => _submit(),
+                              ),
+                              const SizedBox(height: AppSpace.l),
+                              Text(
+                                'Importance',
+                                style: AppTextStyle.body(context).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpace.m,
+                                ),
+                                child: _ImportanceSelector(
+                                  value: _importance,
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      HapticFeedback.selectionClick();
+                                      setState(() {
+                                        _importance = value;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: AppSpace.m),
+                              Text(
+                                'Details',
+                                style: AppTextStyle.body(context).copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpace.s),
+                              CupertinoTextField(
+                                controller: _detailsController,
+                                placeholder: 'Add notes or steps',
+                                maxLines: 4,
+                                minLines: 3,
+                                keyboardType: TextInputType.multiline,
+                                decoration: BoxDecoration(
+                                  color: inputBackground,
+                                  borderRadius: AppRadius.card,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                              if (isEditing) ...[
+                                const SizedBox(height: AppSpace.l),
+                                CupertinoButton(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: AppSpace.s,
+                                    horizontal: AppSpace.m,
+                                  ),
+                                  borderRadius: AppRadius.pill,
+                                  color: destructive.withOpacity(0.12),
+                                  onPressed: () {
+                                    HapticFeedback.mediumImpact();
+                                    context.read<EditRoutineBloc>().add(
+                                          EditRoutineTaskRemoved(
+                                            widget.task!.id,
+                                          ),
+                                        );
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text(
+                                    'Delete Task',
+                                    style: AppTextStyle.body(context).copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: destructive,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
+
+  void _submit() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      HapticFeedback.selectionClick();
+      return;
+    }
+    final details = _detailsController.text.trim();
+    HapticFeedback.mediumImpact();
+    context.read<EditRoutineBloc>().add(
+          EditRoutineTaskSubmitted(
+            taskId: widget.task?.id,
+            title: title,
+            details: details,
+            importance: _importance,
+          ),
+        );
+    Navigator.of(context).pop();
+  }
 }

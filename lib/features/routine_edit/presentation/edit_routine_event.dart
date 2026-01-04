@@ -69,6 +69,23 @@ final class EditRoutineTaskTitleChanged extends EditRoutineEvent {
   List<Object?> get props => [taskId, title];
 }
 
+final class EditRoutineTaskSubmitted extends EditRoutineEvent {
+  const EditRoutineTaskSubmitted({
+    this.taskId,
+    required this.title,
+    required this.details,
+    required this.importance,
+  });
+
+  final String? taskId;
+  final String title;
+  final String details;
+  final RoutineImportance importance;
+
+  @override
+  List<Object?> get props => [taskId, title, details, importance];
+}
+
 final class EditRoutineSaved extends EditRoutineEvent {
   const EditRoutineSaved();
 }

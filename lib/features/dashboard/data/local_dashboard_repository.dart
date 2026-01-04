@@ -163,7 +163,7 @@ class LocalDashboardRepository extends DashboardRepository {
   }
 
   List<Routine> _seedRoutines() {
-    return const [
+    return  [
       Routine(
         id: 'routine-work',
         title: 'Work',
@@ -177,8 +177,20 @@ class LocalDashboardRepository extends DashboardRepository {
           Weekday.friday,
         },
         tasks: [
-          Task(id: 'task-design', title: 'Design Presentation', weight: 0.55),
-          Task(id: 'task-meeting', title: 'Team Meeting', weight: 0.45),
+          Task(
+            id: 'task-design',
+            title: 'Design Presentation',
+            weight: 0.55,
+            details: '',
+            importance: importanceForWeight(0.55),
+          ),
+          Task(
+            id: 'task-meeting',
+            title: 'Team Meeting',
+            weight: 0.45,
+            details: '',
+            importance: importanceForWeight(0.45),
+          ),
         ],
         isActive: true,
       ),
@@ -197,7 +209,13 @@ class LocalDashboardRepository extends DashboardRepository {
           Weekday.sunday,
         },
         tasks: [
-          Task(id: 'task-grocery', title: 'Grocery Shopping', weight: 1.0),
+          Task(
+            id: 'task-grocery',
+            title: 'Grocery Shopping',
+            weight: 1.0,
+            details: '',
+            importance: importanceForWeight(1.0),
+          ),
         ],
         isActive: true,
       ),

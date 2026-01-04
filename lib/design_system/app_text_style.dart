@@ -11,6 +11,15 @@ class AppTextStyle {
     return CupertinoTheme.of(context).textTheme.navTitleTextStyle;
   }
 
+  static TextStyle title3(BuildContext context) {
+    final base = CupertinoTheme.of(context).textTheme.textStyle;
+    return base.copyWith(
+      fontSize: 20,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
+    );
+  }
+
   static TextStyle body(BuildContext context) {
     return CupertinoTheme.of(context).textTheme.textStyle;
   }

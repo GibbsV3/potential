@@ -19,6 +19,7 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
     on<EditRoutineTaskAdded>(_onTaskAdded);
     on<EditRoutineTaskRemoved>(_onTaskRemoved);
     on<EditRoutineTaskTitleChanged>(_onTaskTitleChanged);
+    on<EditRoutineTaskSubmitted>(_onTaskSubmitted);
     on<EditRoutineSaved>(_onSaved);
   }
 
@@ -108,7 +109,9 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
         Task(
           id: _newTaskId(),
           title: _defaultTaskTitle(state.tasks.length + 1),
-          weight: 1.0,
+          details: '',
+          importance: RoutineImportance.medium,
+          weight: weightForImportance(RoutineImportance.medium),
         ),
       );
     emit(
@@ -140,6 +143,8 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
           id: task.id,
           title: event.title,
           weight: task.weight,
+          details: task.details,
+          importance: task.importance,
         );
       }
       return task;
@@ -172,6 +177,8 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
                 id: task.id,
                 title: task.title.trim(),
                 weight: task.weight,
+                details: task.details,
+                importance: task.importance,
               ),
             )
             .toList(),
@@ -192,6 +199,52 @@ class EditRoutineBloc extends Bloc<EditRoutineEvent, EditRoutineState> {
       );
     }
   }
+
+  void _onTaskSubmitted(
+    EditRoutineTaskSubmitted event,
+    Emitter<EditRoutineState> emit,
+  ) {
+    final title = event.title.trim();
+    if (title.isEmpty) {
+      return;
+    }
+    final updated = List<Task>.from(state.tasks);
+    final weight = weightForImportance(event.importance);
+
+    if (event.taskId == null) {
+      updated.add(
+        Task(
+          id: _newTaskId(),
+          title: title,
+          weight: weight,
+          details: event.details.trim(),
+          importance: event.importance,
+        ),
+      );
+    } else {
+      final index = updated.indexWhere((task) => task.id == event.taskId);
+      if (index >= 0) {
+        updated[index] = Task(
+          id: updated[index].id,
+          title: title,
+          weight: weight,
+          details: event.details.trim(),
+          importance: event.importance,
+        );
+      } else {
+        updated.add(
+          Task(
+            id: event.taskId!,
+            title: title,
+            weight: weight,
+            details: event.details.trim(),
+            importance: event.importance,
+          ),
+        );
+      }
+    }
+    emit(state.copyWith(tasks: updated));
+  }
 }
 
 String _newTaskId() {
@@ -209,7 +262,9 @@ EditRoutineState _freshState() {
       Task(
         id: _newTaskId(),
         title: _defaultTaskTitle(1),
-        weight: 1.0,
+        details: '',
+        importance: RoutineImportance.medium,
+        weight: weightForImportance(RoutineImportance.medium),
       ),
     ],
     importance: RoutineImportance.medium,
