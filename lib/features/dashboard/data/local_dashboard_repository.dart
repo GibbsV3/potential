@@ -13,6 +13,7 @@ class LocalDashboardRepository extends DashboardRepository {
 
   List<Routine>? _routines;
   Map<String, Map<String, double>>? _completions;
+  Map<String, List<Routine>>? _routinesByDate;
 
   @override
   Future<List<Routine>> loadRoutines() async {
@@ -37,7 +38,24 @@ class LocalDashboardRepository extends DashboardRepository {
       return _completions!;
     }
     _completions = _store.readCompletions() ?? <String, Map<String, double>>{};
+    await _ensureSnapshotsForDates(_completions!.keys);
     return _completions!;
+  }
+
+  @override
+  Future<Map<String, List<Routine>>> loadRoutinesByDate() async {
+    if (_routinesByDate != null) {
+      return _routinesByDate!;
+    }
+    final stored = _store.readRoutinesByDate();
+    _routinesByDate = stored?.map(
+          (date, routines) => MapEntry(
+            date,
+            List<Routine>.from(routines),
+          ),
+        ) ??
+        <String, List<Routine>>{};
+    return _routinesByDate!;
   }
 
   @override
@@ -46,6 +64,7 @@ class LocalDashboardRepository extends DashboardRepository {
     String taskId,
     double progress,
   ) async {
+    await _ensureRoutineSnapshot(dateKey);
     final completions = await loadCompletions();
     final dayMap = completions[dateKey] ?? <String, double>{};
     dayMap[taskId] = progress.clamp(0, 1);
@@ -85,28 +104,8 @@ class LocalDashboardRepository extends DashboardRepository {
   @override
   Future<void> deleteRoutine(String routineId) async {
     final routines = await loadRoutines();
-    final routineToDelete =
-        routines.firstWhere((routine) => routine.id == routineId);
-    final taskIds = routineToDelete.tasks.map((task) => task.id).toSet();
     _routines = routines.where((routine) => routine.id != routineId).toList();
     await _persistRoutines();
-
-    final completions = await loadCompletions();
-    bool completionsChanged = false;
-    final cleaned = <String, Map<String, double>>{};
-    for (final entry in completions.entries) {
-      final filteredTasks = Map<String, double>.from(entry.value)
-        ..removeWhere((taskId, _) => taskIds.contains(taskId));
-      if (filteredTasks.isNotEmpty) {
-        cleaned[entry.key] = filteredTasks;
-      }
-      completionsChanged =
-          completionsChanged || filteredTasks.length != entry.value.length;
-    }
-    if (completionsChanged) {
-      _completions = cleaned;
-      await _store.saveCompletions(cleaned);
-    }
     _emitRoutines();
   }
 
@@ -117,10 +116,6 @@ class LocalDashboardRepository extends DashboardRepository {
         routines.indexWhere((candidate) => candidate.id == routine.id);
     _routines = List<Routine>.from(routines);
     if (existingIndex >= 0) {
-      await _cleanRemovedTasks(
-        routines[existingIndex].tasks,
-        routine.tasks,
-      );
       _routines![existingIndex] = routine;
     } else {
       _routines!.add(routine);
@@ -129,31 +124,127 @@ class LocalDashboardRepository extends DashboardRepository {
     _emitRoutines();
   }
 
-  Future<void> _cleanRemovedTasks(
-    List<Task> previous,
-    List<Task> updated,
-  ) async {
-    final removedIds = previous.map((task) => task.id).toSet()
-      ..removeAll(updated.map((task) => task.id));
-    if (removedIds.isEmpty) {
+  Future<void> _persistRoutines() async {
+    if (_routines == null) {
       return;
     }
-    final completions = await loadCompletions();
-    bool completionsChanged = false;
-    final cleaned = <String, Map<String, double>>{};
-    for (final entry in completions.entries) {
-      final filteredTasks = Map<String, double>.from(entry.value)
-        ..removeWhere((taskId, _) => removedIds.contains(taskId));
-      if (filteredTasks.isNotEmpty) {
-        cleaned[entry.key] = filteredTasks;
+    await _store.saveRoutines(
+      _routines!
+          .map(
+            (routine) => RoutineModel(
+              id: routine.id,
+              title: routine.title,
+              weight: routine.weight,
+              priority: routine.priority,
+              weekdays: routine.weekdays,
+              tasks: routine.tasks,
+              isActive: routine.isActive,
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<void> _persistRoutinesByDate() async {
+    if (_routinesByDate == null) {
+      return;
+    }
+    await _store.saveRoutinesByDate(
+      _routinesByDate!.map(
+        (dateKey, routines) => MapEntry(
+          dateKey,
+          routines
+              .map(
+                (routine) => RoutineModel(
+                  id: routine.id,
+                  title: routine.title,
+                  weight: routine.weight,
+                  priority: routine.priority,
+                  weekdays: routine.weekdays,
+                  tasks: routine.tasks,
+                  isActive: routine.isActive,
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _ensureRoutineSnapshot(String dateKey) async {
+    final parsedDate = _parseDateKey(dateKey);
+    if (parsedDate == null) {
+      return;
+    }
+    final routinesByDate = await loadRoutinesByDate();
+    if (routinesByDate.containsKey(dateKey)) {
+      return;
+    }
+    final routines = await loadRoutines();
+    final snapshot = _snapshotForDate(parsedDate, routines);
+    _routinesByDate = Map<String, List<Routine>>.from(routinesByDate)
+      ..[dateKey] = snapshot;
+    await _persistRoutinesByDate();
+  }
+
+  Future<void> _ensureSnapshotsForDates(Iterable<String> dateKeys) async {
+    final routinesByDate = await loadRoutinesByDate();
+    final missing = dateKeys.where((key) => !routinesByDate.containsKey(key));
+    if (missing.isEmpty) {
+      return;
+    }
+    final routines = await loadRoutines();
+    final updated = Map<String, List<Routine>>.from(routinesByDate);
+    for (final key in missing) {
+      final date = _parseDateKey(key);
+      if (date == null) {
+        continue;
       }
-      completionsChanged =
-          completionsChanged || filteredTasks.length != entry.value.length;
+      updated[key] = _snapshotForDate(date, routines);
     }
-    if (completionsChanged) {
-      _completions = cleaned;
-      await _store.saveCompletions(cleaned);
+    _routinesByDate = updated;
+    await _persistRoutinesByDate();
+  }
+
+  List<Routine> _snapshotForDate(DateTime date, List<Routine> routines) {
+    final active = routinesForDate(routines, date);
+    return active
+        .map(
+          (routine) => Routine(
+            id: routine.id,
+            title: routine.title,
+            weight: routine.weight,
+            priority: routine.priority,
+            weekdays: Set<Weekday>.from(routine.weekdays),
+            tasks: routine.tasks
+                .map(
+                  (task) => Task(
+                    id: task.id,
+                    title: task.title,
+                    weight: task.weight,
+                    details: task.details,
+                    priority: task.priority,
+                  ),
+                )
+                .toList(),
+            isActive: routine.isActive,
+          ),
+        )
+        .toList();
+  }
+
+  DateTime? _parseDateKey(String dateKey) {
+    final parts = dateKey.split('-');
+    if (parts.length != 3) {
+      return null;
     }
+    final year = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final day = int.tryParse(parts[2]);
+    if (year == null || month == null || day == null) {
+      return null;
+    }
+    return DateTime(year, month, day);
   }
 
   List<Routine> _seedRoutines() {
@@ -214,27 +305,6 @@ class LocalDashboardRepository extends DashboardRepository {
         isActive: true,
       ),
     ];
-  }
-
-  Future<void> _persistRoutines() async {
-    if (_routines == null) {
-      return;
-    }
-    await _store.saveRoutines(
-      _routines!
-          .map(
-            (routine) => RoutineModel(
-              id: routine.id,
-              title: routine.title,
-              weight: routine.weight,
-              priority: routine.priority,
-              weekdays: routine.weekdays,
-              tasks: routine.tasks,
-              isActive: routine.isActive,
-            ),
-          )
-          .toList(),
-    );
   }
 
   void _emitRoutines() {

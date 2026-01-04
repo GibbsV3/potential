@@ -5,6 +5,7 @@ abstract class DashboardRepository {
 
   Future<List<Routine>> loadRoutines();
   Future<Map<String, Map<String, double>>> loadCompletions();
+  Future<Map<String, List<Routine>>> loadRoutinesByDate();
   Future<void> setTaskProgress(
     String dateKey,
     String taskId,

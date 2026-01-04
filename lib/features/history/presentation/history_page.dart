@@ -26,12 +26,14 @@ class _CalendarSheet extends StatefulWidget {
   const _CalendarSheet({
     required this.anchorDate,
     required this.routines,
+    required this.routinesByDate,
     required this.completions,
     required this.onDateSelected,
   });
 
   final DateTime anchorDate;
   final List<Routine> routines;
+  final Map<String, List<Routine>> routinesByDate;
   final Map<String, Map<String, double>> completions;
   final ValueChanged<DateTime> onDateSelected;
 
@@ -157,6 +159,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                     month: month,
                     selectedDate: widget.anchorDate,
                     routines: widget.routines,
+                    routinesByDate: widget.routinesByDate,
                     completions: widget.completions,
                     onDateSelected: (date) {
                       widget.onDateSelected(date);
@@ -179,6 +182,7 @@ class _MonthSection extends StatelessWidget {
     required this.month,
     required this.selectedDate,
     required this.routines,
+    required this.routinesByDate,
     required this.completions,
     required this.onDateSelected,
   });
@@ -186,6 +190,7 @@ class _MonthSection extends StatelessWidget {
   final DateTime month;
   final DateTime selectedDate;
   final List<Routine> routines;
+  final Map<String, List<Routine>> routinesByDate;
   final Map<String, Map<String, double>> completions;
   final ValueChanged<DateTime> onDateSelected;
 
@@ -225,6 +230,7 @@ class _MonthSection extends StatelessWidget {
           days: days,
           selectedDate: selectedDate,
           routines: routines,
+          routinesByDate: routinesByDate,
           completions: completions,
           onDateSelected: onDateSelected,
           weeks: weeks,
@@ -268,6 +274,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.days,
     required this.selectedDate,
     required this.routines,
+    required this.routinesByDate,
     required this.completions,
     required this.onDateSelected,
     required this.weeks,
@@ -277,6 +284,7 @@ class _CalendarGrid extends StatelessWidget {
   final List<DateTime> days;
   final DateTime selectedDate;
   final List<Routine> routines;
+  final Map<String, List<Routine>> routinesByDate;
   final Map<String, Map<String, double>> completions;
   final ValueChanged<DateTime> onDateSelected;
   final int weeks;
@@ -301,6 +309,7 @@ class _CalendarGrid extends StatelessWidget {
                     progress: _progressForDate(
                       date: days[(row * 7) + col],
                       routines: routines,
+                      routinesByDate: routinesByDate,
                       completions: completions,
                     ),
                     onSelected: onDateSelected,
@@ -490,6 +499,7 @@ class _HistoryView extends StatelessWidget {
                 trailing: _CalendarButton(
                   anchorDate: state.anchorDate,
                   routines: state.routines,
+                  routinesByDate: state.routinesByDate,
                   completions: state.completions,
                   onDateSelected: (date) {
                     context
@@ -521,12 +531,14 @@ class _CalendarButton extends StatelessWidget {
   const _CalendarButton({
     required this.anchorDate,
     required this.routines,
+    required this.routinesByDate,
     required this.completions,
     required this.onDateSelected,
   });
 
   final DateTime anchorDate;
   final List<Routine> routines;
+  final Map<String, List<Routine>> routinesByDate;
   final Map<String, Map<String, double>> completions;
   final ValueChanged<DateTime> onDateSelected;
 
@@ -555,6 +567,7 @@ class _CalendarButton extends StatelessWidget {
         return _CalendarSheet(
           anchorDate: anchorDate,
           routines: routines,
+          routinesByDate: routinesByDate,
           completions: completions,
           onDateSelected: onDateSelected,
         );
@@ -639,6 +652,7 @@ String _monthLabel(DateTime month) {
 double _progressForDate({
   required DateTime date,
   required List<Routine> routines,
+  required Map<String, List<Routine>> routinesByDate,
   required Map<String, Map<String, double>> completions,
 }) {
   if (routines.isEmpty) {
@@ -648,6 +662,7 @@ double _progressForDate({
     date: date,
     routines: routines,
     completions: completions,
+    routinesByDate: routinesByDate,
   );
 }
 

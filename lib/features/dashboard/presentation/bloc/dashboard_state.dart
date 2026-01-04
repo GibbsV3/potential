@@ -7,6 +7,7 @@ class DashboardState extends Equatable {
     required this.status,
     required this.selectedDate,
     required this.routines,
+    required this.routinesByDate,
     required this.completions,
     required this.routineProgress,
     required this.dailyProgress,
@@ -19,6 +20,7 @@ class DashboardState extends Equatable {
       status: DashboardStatus.initial,
       selectedDate: DateTime(date.year, date.month, date.day),
       routines: const [],
+      routinesByDate: const {},
       completions: const {},
       routineProgress: const [],
       dailyProgress: 0,
@@ -29,6 +31,7 @@ class DashboardState extends Equatable {
   final DashboardStatus status;
   final DateTime selectedDate;
   final List<Routine> routines;
+  final Map<String, List<Routine>> routinesByDate;
   final Map<String, Map<String, double>> completions;
   final List<RoutineProgress> routineProgress;
   final double dailyProgress;
@@ -39,6 +42,7 @@ class DashboardState extends Equatable {
     DashboardStatus? status,
     DateTime? selectedDate,
     List<Routine>? routines,
+    Map<String, List<Routine>>? routinesByDate,
     Map<String, Map<String, double>>? completions,
     List<RoutineProgress>? routineProgress,
     double? dailyProgress,
@@ -49,6 +53,7 @@ class DashboardState extends Equatable {
       status: status ?? this.status,
       selectedDate: selectedDate ?? this.selectedDate,
       routines: routines ?? this.routines,
+      routinesByDate: routinesByDate ?? this.routinesByDate,
       completions: completions ?? this.completions,
       routineProgress: routineProgress ?? this.routineProgress,
       dailyProgress: dailyProgress ?? this.dailyProgress,
@@ -62,13 +67,19 @@ class DashboardState extends Equatable {
     DashboardStatus? status,
     DateTime? selectedDate,
     List<Routine>? routines,
+    Map<String, List<Routine>>? routinesByDate,
     Map<String, Map<String, double>>? completions,
     String? errorMessage,
   }) {
     final resolvedDate = normalizeDate(selectedDate ?? this.selectedDate);
     final resolvedRoutines = routines ?? this.routines;
+    final resolvedRoutinesByDate = routinesByDate ?? this.routinesByDate;
     final resolvedCompletions = completions ?? this.completions;
-    final filteredRoutines = routinesForDate(resolvedRoutines, resolvedDate);
+    final filteredRoutines = routinesForDateWithHistory(
+      resolvedRoutines,
+      resolvedDate,
+      routinesByDate: resolvedRoutinesByDate,
+    );
     final dayCompletions =
         completionsForDate(resolvedDate, resolvedCompletions);
     final routineProgress =
@@ -80,6 +91,7 @@ class DashboardState extends Equatable {
       status: status ?? this.status,
       selectedDate: resolvedDate,
       routines: resolvedRoutines,
+      routinesByDate: resolvedRoutinesByDate,
       completions: resolvedCompletions,
       routineProgress: routineProgress,
       dailyProgress: dailyProgress,
@@ -93,6 +105,7 @@ class DashboardState extends Equatable {
       date: date,
       routines: routines,
       completions: completions,
+      routinesByDate: routinesByDate,
     );
   }
 
@@ -101,6 +114,7 @@ class DashboardState extends Equatable {
         status,
         selectedDate,
         routines,
+        routinesByDate,
         completions,
         routineProgress,
         dailyProgress,

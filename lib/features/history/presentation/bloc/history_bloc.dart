@@ -24,6 +24,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   late final StreamSubscription<List<Routine>> _routineSubscription;
   List<Routine> _routines = const [];
   Map<String, Map<String, double>> _completions = const {};
+  Map<String, List<Routine>> _routinesByDate = const {};
 
   Future<void> _onLoaded(
     HistoryLoaded event,
@@ -33,6 +34,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     try {
       _routines = await _repository.loadRoutines();
       _completions = await _repository.loadCompletions();
+      _routinesByDate = await _repository.loadRoutinesByDate();
       emit(_buildReadyState(
         status: HistoryStatus.ready,
         anchorDate: DateTime.now(),
@@ -53,6 +55,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   ) async {
     try {
       _completions = await _repository.loadCompletions();
+      _routinesByDate = await _repository.loadRoutinesByDate();
       emit(
         _buildReadyState(
           range: event.range,
@@ -75,6 +78,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   ) async {
     try {
       _completions = await _repository.loadCompletions();
+      _routinesByDate = await _repository.loadRoutinesByDate();
       emit(
         _buildReadyState(
           anchorDate: event.anchorDate,
@@ -101,6 +105,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     }
     try {
       _completions = await _repository.loadCompletions();
+      _routinesByDate = await _repository.loadRoutinesByDate();
       emit(
         _buildReadyState(
           status: HistoryStatus.ready,
@@ -130,6 +135,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
       anchorDate: resolvedAnchor,
       points: points,
       routines: _routines,
+      routinesByDate: _routinesByDate,
       completions: _completions,
       errorMessage: null,
     );
@@ -139,7 +145,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     HistoryRange range,
     DateTime anchorDate,
   ) {
-    if (_routines.isEmpty) {
+    if (_routines.isEmpty && _routinesByDate.isEmpty) {
       return range == HistoryRange.daily
           ? _buildDailySkeleton(anchorDate)
           : _buildWeeklySkeleton(anchorDate);
@@ -161,6 +167,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         date: date,
         routines: _routines,
         completions: _completions,
+        routinesByDate: _routinesByDate,
       );
       return HistoryPoint(date: date, progress: progress);
     });
@@ -206,6 +213,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         date: date,
         routines: _routines,
         completions: _completions,
+        routinesByDate: _routinesByDate,
       );
     }
     return sum / 7;

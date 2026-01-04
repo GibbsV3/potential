@@ -14,7 +14,22 @@ Map<String, double> completionsForDate(
 }
 
 List<Routine> routinesForDate(List<Routine> routines, DateTime date) {
+  return routinesForDateWithHistory(routines, date);
+}
+
+List<Routine> routinesForDateWithHistory(
+  List<Routine> routines,
+  DateTime date, {
+  Map<String, List<Routine>> routinesByDate = const {},
+}) {
   final resolvedDate = normalizeDate(date);
+  final today = normalizeDate(DateTime.now());
+  if (resolvedDate.isBefore(today)) {
+    final snapshot = routinesByDate[_dateKey(resolvedDate)];
+    if (snapshot != null) {
+      return List<Routine>.from(snapshot);
+    }
+  }
   final resolvedWeekday = Weekday.fromDate(resolvedDate);
   return routines
       .where(
@@ -63,9 +78,14 @@ double weightedProgressForDate({
   required DateTime date,
   required List<Routine> routines,
   required Map<String, Map<String, double>> completions,
+  Map<String, List<Routine>> routinesByDate = const {},
 }) {
   final normalizedDate = normalizeDate(date);
-  final routinesForDay = routinesForDate(routines, normalizedDate);
+  final routinesForDay = routinesForDateWithHistory(
+    routines,
+    normalizedDate,
+    routinesByDate: routinesByDate,
+  );
   if (routinesForDay.isEmpty) {
     return 0;
   }

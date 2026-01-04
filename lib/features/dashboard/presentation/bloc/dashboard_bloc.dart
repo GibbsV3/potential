@@ -32,8 +32,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     try {
       final routines = await _repository.loadRoutines();
       final completions = await _repository.loadCompletions();
+      final routinesByDate = await _repository.loadRoutinesByDate();
       emit(state.buildWith(
         routines: routines,
+        routinesByDate: routinesByDate,
         completions: completions,
         selectedDate: state.selectedDate,
         status: DashboardStatus.ready,
@@ -65,7 +67,13 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       updated,
     );
     final completions = await _repository.loadCompletions();
-    emit(state.buildWith(completions: completions));
+    final routinesByDate = await _repository.loadRoutinesByDate();
+    emit(
+      state.buildWith(
+        completions: completions,
+        routinesByDate: routinesByDate,
+      ),
+    );
   }
 
   Future<void> _onTaskProgressChanged(
@@ -78,7 +86,13 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       event.progress,
     );
     final completions = await _repository.loadCompletions();
-    emit(state.buildWith(completions: completions));
+    final routinesByDate = await _repository.loadRoutinesByDate();
+    emit(
+      state.buildWith(
+        completions: completions,
+        routinesByDate: routinesByDate,
+      ),
+    );
   }
 
   Future<void> _onRoutinesUpdated(
@@ -86,10 +100,12 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     Emitter<DashboardState> emit,
   ) async {
     final completions = await _repository.loadCompletions();
+    final routinesByDate = await _repository.loadRoutinesByDate();
     emit(
       state.buildWith(
         routines: event.routines,
         completions: completions,
+        routinesByDate: routinesByDate,
       ),
     );
   }
