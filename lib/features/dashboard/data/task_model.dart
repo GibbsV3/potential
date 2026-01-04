@@ -1,4 +1,4 @@
-import '../domain/task.dart';
+import '../../../core/domain/task.dart';
 
 class TaskModel extends Task {
   const TaskModel({

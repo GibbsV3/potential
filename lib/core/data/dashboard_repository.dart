@@ -13,4 +13,5 @@ abstract class DashboardRepository {
   Stream<List<Routine>> watchRoutines();
   Future<void> setRoutineActive(String routineId, bool isActive);
   Future<void> deleteRoutine(String routineId);
+  Future<void> saveRoutine(Routine routine);
 }

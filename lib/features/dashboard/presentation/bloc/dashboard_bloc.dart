@@ -2,12 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../data/dashboard_repository.dart';
-import '../../domain/routine.dart';
-import '../../domain/weekday.dart';
-import '../dashboard_date_utils.dart';
-import '../routine_progress.dart';
+import 'package:potential/potential.dart';
 
 part 'dashboard_event.dart';
 part 'dashboard_state.dart';

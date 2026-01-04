@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/data/dashboard_repository.dart';
+import '../../../core/domain/routine.dart';
+import '../../../core/domain/weekday.dart';
 import '../../../design_system/design_system.dart';
-import '../../dashboard/data/dashboard_repository.dart';
-import '../../dashboard/domain/routine.dart';
-import '../../dashboard/domain/weekday.dart';
 import 'bloc/routines_bloc.dart';
 
 class RoutinesPage extends StatelessWidget {
@@ -46,7 +47,7 @@ class _RoutinesView extends StatelessWidget {
                 trailing: _AddButton(
                   onPressed: () {
                     HapticFeedback.selectionClick();
-                    _showAddRoutinePlaceholder(context);
+                    context.pushNamed('routine_new');
                   },
                 ),
               ),
@@ -130,6 +131,13 @@ class _RoutinesView extends StatelessWidget {
                                     RoutineDeleted(routine.id),
                                   );
                             },
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              context.pushNamed(
+                                'routine_edit',
+                                pathParameters: {'id': routine.id},
+                              );
+                            },
                           ),
                         );
                       },
@@ -186,12 +194,14 @@ class _RoutineCard extends StatelessWidget {
     required this.isEditing,
     required this.onToggle,
     required this.onDelete,
+    this.onTap,
   });
 
   final Routine routine;
   final bool isEditing;
   final ValueChanged<bool> onToggle;
   final VoidCallback onDelete;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -203,108 +213,92 @@ class _RoutineCard extends StatelessWidget {
     final secondary =
         CupertinoDynamicColor.resolve(AppColor.secondaryLabel, context);
 
-    return AnimatedContainer(
-      duration: AppMotion.quick,
-      curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppRadius.card,
-      ),
-      padding: const EdgeInsets.all(AppSpace.m),
-      child: Row(
-        children: [
-          AnimatedSwitcher(
-            duration: AppMotion.quick,
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeOut,
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: SizeTransition(
-                  sizeFactor: animation,
-                  axis: Axis.horizontal,
-                  child: child,
-                ),
-              );
-            },
-            child: isEditing
-                ? Padding(
-                    key: const ValueKey('delete'),
-                    padding:
-                        const EdgeInsets.only(right: AppSpace.s),
-                    child: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      minSize: 28,
-                      onPressed: onDelete,
-                      child: const Icon(
-                        CupertinoIcons.minus_circle_fill,
-                        color: CupertinoColors.systemRed,
-                        size: 24,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppMotion.quick,
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: AppRadius.card,
+        ),
+        padding: const EdgeInsets.all(AppSpace.m),
+        child: Row(
+          children: [
+            AnimatedSwitcher(
+              duration: AppMotion.quick,
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeOut,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SizeTransition(
+                    sizeFactor: animation,
+                    axis: Axis.horizontal,
+                    child: child,
+                  ),
+                );
+              },
+              child: isEditing
+                  ? Padding(
+                      key: const ValueKey('delete'),
+                      padding: const EdgeInsets.only(right: AppSpace.s),
+                      child: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minSize: 28,
+                        onPressed: onDelete,
+                        child: const Icon(
+                          CupertinoIcons.minus_circle_fill,
+                          color: CupertinoColors.systemRed,
+                          size: 24,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('spacer'),
+                    ),
+            ),
+            Expanded(
+              child: AnimatedPadding(
+                duration: AppMotion.quick,
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(left: isEditing ? AppSpace.s : 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      routine.title,
+                      style: AppTextStyle.body(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: label,
                       ),
                     ),
-                  )
-                : const SizedBox.shrink(
-                    key: ValueKey('spacer'),
-                  ),
-          ),
-          Expanded(
-            child: AnimatedPadding(
-              duration: AppMotion.quick,
-              curve: Curves.easeOut,
-              padding: EdgeInsets.only(left: isEditing ? AppSpace.s : 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    routine.title,
-                    style: AppTextStyle.body(context).copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: label,
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      _formatWeekdays(routine.weekdays),
+                      style: AppTextStyle.footnote(context).copyWith(
+                        color: secondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpace.xs),
-                  Text(
-                    _formatWeekdays(routine.weekdays),
-                    style: AppTextStyle.footnote(context).copyWith(
-                      color: secondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          CupertinoSwitch(
-            value: routine.isActive,
-            onChanged: onToggle,
-            activeColor: CupertinoDynamicColor.resolve(
-              AppColor.accent,
-              context,
+            CupertinoSwitch(
+              value: routine.isActive,
+              onChanged: onToggle,
+              activeColor: CupertinoDynamicColor.resolve(
+                AppColor.accent,
+                context,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
-
-void _showAddRoutinePlaceholder(BuildContext context) {
-  showCupertinoModalPopup<void>(
-    context: context,
-    builder: (context) {
-      return CupertinoActionSheet(
-        title: const Text('Add Routine'),
-        message: const Text(
-          'Routine creation flow is not defined yet. Let me know how you want to add routines and tasks.',
-        ),
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('OK'),
-        ),
-      );
-    },
-  );
 }
 
 String _formatWeekdays(Set<Weekday> weekdays) {

@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import '../domain/routine.dart';
-import '../domain/task.dart';
-import '../domain/weekday.dart';
+import '../../../core/data/dashboard_repository.dart';
+import '../../../core/domain/routine.dart';
+import '../../../core/domain/routine_importance.dart';
+import '../../../core/domain/task.dart';
+import '../../../core/domain/weekday.dart';
 import 'dashboard_local_store.dart';
-import 'dashboard_repository.dart';
 import 'routine_model.dart';
 
 class LocalDashboardRepository extends DashboardRepository {
@@ -75,6 +76,7 @@ class LocalDashboardRepository extends DashboardRepository {
                   id: routine.id,
                   title: routine.title,
                   weight: routine.weight,
+                  importance: routine.importance,
                   weekdays: routine.weekdays,
                   tasks: routine.tasks,
                   isActive: isActive,
@@ -114,12 +116,59 @@ class LocalDashboardRepository extends DashboardRepository {
     _emitRoutines();
   }
 
+  @override
+  Future<void> saveRoutine(Routine routine) async {
+    final routines = await loadRoutines();
+    final existingIndex =
+        routines.indexWhere((candidate) => candidate.id == routine.id);
+    _routines = List<Routine>.from(routines);
+    if (existingIndex >= 0) {
+      await _cleanRemovedTasks(
+        routines[existingIndex].tasks,
+        routine.tasks,
+      );
+      _routines![existingIndex] = routine;
+    } else {
+      _routines!.add(routine);
+    }
+    await _persistRoutines();
+    _emitRoutines();
+  }
+
+  Future<void> _cleanRemovedTasks(
+    List<Task> previous,
+    List<Task> updated,
+  ) async {
+    final removedIds = previous.map((task) => task.id).toSet()
+      ..removeAll(updated.map((task) => task.id));
+    if (removedIds.isEmpty) {
+      return;
+    }
+    final completions = await loadCompletions();
+    bool completionsChanged = false;
+    final cleaned = <String, Map<String, double>>{};
+    for (final entry in completions.entries) {
+      final filteredTasks = Map<String, double>.from(entry.value)
+        ..removeWhere((taskId, _) => removedIds.contains(taskId));
+      if (filteredTasks.isNotEmpty) {
+        cleaned[entry.key] = filteredTasks;
+      }
+      completionsChanged =
+          completionsChanged || filteredTasks.length != entry.value.length;
+    }
+    if (completionsChanged) {
+      _completions = cleaned;
+      await _store.saveCompletions(cleaned);
+    }
+  }
+
   List<Routine> _seedRoutines() {
     return const [
       Routine(
         id: 'routine-work',
         title: 'Work',
         weight: 0.6,
+        importance: RoutineImportance.high,
         weekdays: {
           Weekday.monday,
           Weekday.tuesday,
@@ -137,6 +186,7 @@ class LocalDashboardRepository extends DashboardRepository {
         id: 'routine-personal',
         title: 'Personal',
         weight: 0.4,
+        importance: RoutineImportance.medium,
         weekdays: {
           Weekday.monday,
           Weekday.tuesday,
@@ -165,6 +215,7 @@ class LocalDashboardRepository extends DashboardRepository {
               id: routine.id,
               title: routine.title,
               weight: routine.weight,
+              importance: routine.importance,
               weekdays: routine.weekdays,
               tasks: routine.tasks,
               isActive: routine.isActive,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import 'routine_importance.dart';
 import 'task.dart';
 import 'weekday.dart';
 
@@ -8,6 +9,7 @@ class Routine extends Equatable {
     required this.id,
     required this.title,
     required this.weight,
+    required this.importance,
     required this.weekdays,
     required this.tasks,
     required this.isActive,
@@ -16,10 +18,19 @@ class Routine extends Equatable {
   final String id;
   final String title;
   final double weight;
+  final RoutineImportance importance;
   final Set<Weekday> weekdays;
   final List<Task> tasks;
   final bool isActive;
 
   @override
-  List<Object> get props => [id, title, weight, weekdays, tasks, isActive];
+  List<Object> get props => [
+        id,
+        title,
+        weight,
+        importance,
+        weekdays,
+        tasks,
+        isActive,
+      ];
 }

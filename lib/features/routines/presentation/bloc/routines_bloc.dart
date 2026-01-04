@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../dashboard/data/dashboard_repository.dart';
-import '../../../dashboard/domain/routine.dart';
+import 'package:potential/potential.dart';
 
 part 'routines_event.dart';
 part 'routines_state.dart';

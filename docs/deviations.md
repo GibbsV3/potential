@@ -27,3 +27,10 @@
   Why: iOS HIG - Navigation Bars (primary actions in the trailing position) and Edit Mode (destructive controls appear after entering edit).
   Tradeoffs: Add button currently shows a placeholder action until the creation flow is defined.
   Open questions: What is the desired add-routine flow (fields, default weights/tasks, week assignment)?
+
+- Context: Edit routine screen
+  What screenshot suggested: Tasks split by routine with a floating bottom add button, squared day chips, and no explicit importance control.
+  What we implemented: Cupertino modal edit form with Cancel/Save nav buttons, inset grouped sections, a single Tasks header with an inline add button, capsule weekday chips, and a 5-segment importance selector (stored but not yet used in scoring).
+  Why: iOS HIG - Forms (modal sheets with Cancel/Save), Lists and Tables (inset grouped sections for settings-style input), Controls (segmented chips for multi-select days), and primary action placement for inline add instead of floating FAB.
+  Tradeoffs: Tasks are flat instead of grouped; add button is inline rather than floating; importance is captured but not yet applied to calculations.
+  Open questions: Should Save auto-dismiss without confirmation? How should importance map to routine weighting? Should task ordering be editable?

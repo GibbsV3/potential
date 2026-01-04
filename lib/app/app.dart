@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/data/dashboard_repository.dart';
 import '../design_system/design_system.dart';
-import '../features/dashboard/data/dashboard_repository.dart';
 import 'router.dart';
 
 class PotentialApp extends StatelessWidget {
