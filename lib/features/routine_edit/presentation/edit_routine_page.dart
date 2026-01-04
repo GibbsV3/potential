@@ -136,9 +136,9 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
           return CupertinoScrollbar(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
+                0,
                 AppSpace.l,
-                AppSpace.l,
-                AppSpace.l,
+                0,
                 AppSpace.xxxl,
               ),
               children: [
