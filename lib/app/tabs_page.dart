@@ -119,7 +119,7 @@ class _FloatingTabBar extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(AppSpace.xs),
           decoration: BoxDecoration(
-            color: barColor.withOpacity(0.75),
+            color: barColor.withValues(alpha: 0.75),
             borderRadius: AppRadius.pill,
             border: Border.all(
               color: CupertinoDynamicColor.resolve(AppColor.separator, context),

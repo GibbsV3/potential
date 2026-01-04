@@ -149,11 +149,10 @@ class _CalendarSheetState extends State<_CalendarSheet> {
                   AppSpace.xxxl,
                 ),
                 itemCount: _months.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpace.xl),
+                separatorBuilder: (_, _) => const SizedBox(height: AppSpace.xl),
                 itemBuilder: (context, index) {
                   final month = _months[index];
-                  final isAnchor =
-                      month.year == _anchorMonth.year && month.month == _anchorMonth.month;
+                  
                   return _MonthSection(
                     key: _monthKeys[_monthKey(month)],
                     month: month,
@@ -447,8 +446,8 @@ class _DayRing extends StatelessWidget {
       size: Size.square(size),
       painter: _DayRingPainter(
         progress: adjustedProgress,
-        progressColor: faded ? accent.withOpacity(0.4) : accent,
-        trackColor: faded ? track.withOpacity(0.4) : track,
+        progressColor: faded ? accent.withValues(alpha: 0.4) : accent,
+        trackColor: faded ? track.withValues(alpha: 0.4) : track,
         isSelected: isSelected,
       ),
     );
@@ -910,8 +909,7 @@ class _HistoryChartCard extends StatelessWidget {
 }
 
 class _HistoryChart extends StatefulWidget {
-  const _HistoryChart({
-    super.key,
+  const _HistoryChart({   
     required this.points,
   });
 
@@ -1034,7 +1032,7 @@ class _HistoryChartPainter extends CustomPainter {
     final horizontalStep =
         points.length <= 1 ? 0.0 : chartRect.width / (points.length - 1);
     final gridPaint = Paint()
-      ..color = gridColor.withOpacity(0.5)
+      ..color = gridColor.withValues(alpha: 0.5)
       ..strokeWidth = 0.8;
 
     for (final fraction in [0.0, 0.5, 1.0]) {
@@ -1072,10 +1070,10 @@ class _HistoryChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          accentColor.withOpacity(0.14),
-          accentColor.withOpacity(0.1),
-          accentColor.withOpacity(0.06),
-          accentColor.withOpacity(0.03),
+          accentColor.withValues(alpha: 0.14),
+          accentColor.withValues(alpha: 0.1),
+          accentColor.withValues(alpha: 0.06),
+          accentColor.withValues(alpha: 0.03),
         ],
         stops: const [0.0, 0.35, 0.7, 1.0],
       ).createShader(chartRect)

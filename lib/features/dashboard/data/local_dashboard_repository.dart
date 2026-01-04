@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:developer' as developer;
 
 import 'package:potential/potential.dart';
@@ -229,9 +228,8 @@ class LocalDashboardRepository extends DashboardRepository {
         snapshot = _snapshotForDate(parsedDate, routines);
         pendingWrites[key] = snapshot;
       }
-      if (snapshot != null) {
+      
         _routinesByDateCache.put(key, snapshot);
-      }
     }
 
     if (pendingWrites.isNotEmpty) {
@@ -340,7 +338,7 @@ class _BoundedDateCache<T> {
 
   final int maxEntries;
   final void Function(String key, T value)? onEvict;
-  final _store = LinkedHashMap<String, T>();
+  final _store = <String, T>{};
 
   bool containsKey(String key) {
     return _store.containsKey(key);

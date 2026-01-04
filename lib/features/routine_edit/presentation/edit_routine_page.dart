@@ -306,11 +306,10 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
               const Spacer(),
               CupertinoButton(
                 padding: EdgeInsets.zero,
-                minSize: 28,
                 onPressed: () {
                   HapticFeedback.selectionClick();
                   _showTaskSheet(context, bloc);
-                },
+                }, minimumSize: Size(28, 28),
                 child: Icon(
                   CupertinoIcons.add,
                   size: 20,
@@ -357,7 +356,7 @@ class _EditRoutineFormState extends State<_EditRoutineForm> {
                       direction: DismissDirection.startToEnd,
                       background: Container(
                         decoration: BoxDecoration(
-                          color: CupertinoColors.systemRed.withOpacity(0.15),
+                          color: CupertinoColors.systemRed.withValues(alpha: 0.15),
                           borderRadius: i == 0 && i == state.tasks.length - 1
                               ? AppRadius.card
                               : BorderRadius.only(
@@ -807,7 +806,7 @@ class _TaskSheetState extends State<_TaskSheet> {
                   horizontal: AppSpace.m,
                 ),
                 borderRadius: AppRadius.pill,
-                color: destructive.withOpacity(0.12),
+                color: destructive.withValues(alpha: 0.12),
                 onPressed: () {
                   HapticFeedback.mediumImpact();
                   context.read<EditRoutineBloc>().add(

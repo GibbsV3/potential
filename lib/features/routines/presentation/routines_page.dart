@@ -242,8 +242,7 @@ class _RoutineCard extends StatelessWidget {
                       padding: const EdgeInsets.only(right: AppSpace.s),
                       child: CupertinoButton(
                         padding: EdgeInsets.zero,
-                        minSize: 28,
-                        onPressed: onDelete,
+                        onPressed: onDelete, minimumSize: Size(28, 28),
                         child: const Icon(
                           CupertinoIcons.minus_circle_fill,
                           color: CupertinoColors.systemRed,
@@ -285,7 +284,7 @@ class _RoutineCard extends StatelessWidget {
             CupertinoSwitch(
               value: routine.isActive,
               onChanged: onToggle,
-              activeColor: CupertinoDynamicColor.resolve(
+              activeTrackColor: CupertinoDynamicColor.resolve(
                 AppColor.accent,
                 context,
               ),

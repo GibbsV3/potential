@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -188,41 +187,41 @@ class _HeaderDatePicker extends StatelessWidget {
   }
 }
 
-class _DailyProgressSummary extends StatelessWidget {
-  const _DailyProgressSummary({
-    required this.progress,
-    required this.selectedDate,
-  });
+// class _DailyProgressSummary extends StatelessWidget {
+//   const _DailyProgressSummary({
+//     required this.progress,
+//     required this.selectedDate,
+//   });
 
-  final double progress;
-  final DateTime selectedDate;
+//   final double progress;
+//   final DateTime selectedDate;
 
-  @override
-  Widget build(BuildContext context) {
-    final percent = (progress * 100).round();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _formatDayLabel(selectedDate),
-          style: AppTextStyle.title1(context),
-        ),
-        const SizedBox(height: AppSpace.s),
-        _ProgressBar(progress: progress),
-        const SizedBox(height: AppSpace.s),
-        Text(
-          '$percent% of weighted routines completed',
-          style: AppTextStyle.footnote(context).copyWith(
-            color: CupertinoDynamicColor.resolve(
-              AppColor.secondaryLabel,
-              context,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     final percent = (progress * 100).round();
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text(
+//           _formatDayLabel(selectedDate),
+//           style: AppTextStyle.title1(context),
+//         ),
+//         const SizedBox(height: AppSpace.s),
+//         _ProgressBar(progress: progress),
+//         const SizedBox(height: AppSpace.s),
+//         Text(
+//           '$percent% of weighted routines completed',
+//           style: AppTextStyle.footnote(context).copyWith(
+//             color: CupertinoDynamicColor.resolve(
+//               AppColor.secondaryLabel,
+//               context,
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+// }
 
 class _WeekdaySelector extends StatelessWidget {
   const _WeekdaySelector({
@@ -576,7 +575,7 @@ class _TaskRowGestureState extends State<_TaskRowGesture> {
         ? CupertinoColors.white
         : CupertinoDynamicColor.resolve(AppColor.label, context);
     final secondaryText = _localProgress > 0.7
-        ? CupertinoColors.white.withOpacity(0.85)
+        ? CupertinoColors.white.withValues(alpha: 0.85)
         : CupertinoDynamicColor.resolve(AppColor.secondaryLabel, context);
 
     return GestureDetector(
@@ -613,7 +612,7 @@ class _TaskRowGestureState extends State<_TaskRowGesture> {
                         color: CupertinoDynamicColor.resolve(
                           AppColor.accent,
                           context,
-                        ).withOpacity(0.12 + (clamped * 0.28)),
+                        ).withValues(alpha: 0.12 + (clamped * 0.28)),
                       ),
                     );
                   },
@@ -708,41 +707,41 @@ class _TaskRowGestureState extends State<_TaskRowGesture> {
   }
 }
 
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.progress});
+// class _ProgressBar extends StatelessWidget {
+//   const _ProgressBar({required this.progress});
 
-  final double progress;
+//   final double progress;
 
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: AppRadius.pill,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth * progress.clamp(0, 1);
-          return Stack(
-            children: [
-              Container(
-                height: 8,
-                color: CupertinoDynamicColor.resolve(
-                  AppColor.separator,
-                  context,
-                ),
-              ),
-              AnimatedContainer(
-                duration: AppMotion.relaxed,
-                curve: Curves.easeOut,
-                height: 8,
-                width: width,
-                color: AppColor.accent,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return ClipRRect(
+//       borderRadius: AppRadius.pill,
+//       child: LayoutBuilder(
+//         builder: (context, constraints) {
+//           final width = constraints.maxWidth * progress.clamp(0, 1);
+//           return Stack(
+//             children: [
+//               Container(
+//                 height: 8,
+//                 color: CupertinoDynamicColor.resolve(
+//                   AppColor.separator,
+//                   context,
+//                 ),
+//               ),
+//               AnimatedContainer(
+//                 duration: AppMotion.relaxed,
+//                 curve: Curves.easeOut,
+//                 height: 8,
+//                 width: width,
+//                 color: AppColor.accent,
+//               ),
+//             ],
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
 
 String _formatDayLabel(DateTime date) {
   final normalized = _normalize(date);
