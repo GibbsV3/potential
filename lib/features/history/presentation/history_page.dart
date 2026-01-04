@@ -224,45 +224,56 @@ class _HistoryRangeSelector extends StatelessWidget {
       AppColor.secondaryLabel,
       context,
     );
-    return CupertinoSlidingSegmentedControl<HistoryRange>(
-      groupValue: range,
-      thumbColor: CupertinoDynamicColor.resolve(
-        AppColor.systemBackground,
-        context,
-      ),
-      backgroundColor: CupertinoDynamicColor.resolve(
-        AppColor.secondarySystemGroupedBackground,
-        context,
-      ),
-      onValueChanged: onChanged,
-      children: {
-        HistoryRange.daily: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpace.s,
-            horizontal: AppSpace.xl,
-          ),
-          child: Text(
-            'Daily',
-            style: AppTextStyle.body(context).copyWith(
-              fontWeight: FontWeight.w600,
-              color: range == HistoryRange.daily ? null : secondary,
+    final thumbColor = CupertinoDynamicColor.resolve(
+      AppColor.systemBackground,
+      context,
+    );
+    final backgroundColor = CupertinoDynamicColor.resolve(
+      AppColor.secondarySystemGroupedBackground,
+      context,
+    );
+
+    return AppSlidingSegmentedControl<HistoryRange>(
+      segments: [
+        AppSlidingSegment<HistoryRange>(
+          value: HistoryRange.daily,
+          builder: (context, selected) => Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpace.s,
+              horizontal: AppSpace.xl,
+            ),
+            child: Text(
+              'Daily',
+              style: AppTextStyle.body(context).copyWith(
+                fontWeight: FontWeight.w600,
+                color: selected ? null : secondary,
+              ),
             ),
           ),
         ),
-        HistoryRange.weekly: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpace.s,
-            horizontal: AppSpace.xl,
-          ),
-          child: Text(
-            'Weekly',
-            style: AppTextStyle.body(context).copyWith(
-              fontWeight: FontWeight.w600,
-              color: range == HistoryRange.weekly ? null : secondary,
+        AppSlidingSegment<HistoryRange>(
+          value: HistoryRange.weekly,
+          builder: (context, selected) => Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpace.s,
+              horizontal: AppSpace.xl,
+            ),
+            child: Text(
+              'Weekly',
+              style: AppTextStyle.body(context).copyWith(
+                fontWeight: FontWeight.w600,
+                color: selected ? null : secondary,
+              ),
             ),
           ),
         ),
-      },
+      ],
+      value: range,
+      onChanged: (value) => onChanged(value),
+      backgroundColor: backgroundColor,
+      thumbColor: thumbColor,
+      padding: const EdgeInsets.all(AppSpace.xs),
+      thumbInset: 0,
     );
   }
 }

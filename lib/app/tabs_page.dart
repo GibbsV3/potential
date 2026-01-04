@@ -81,7 +81,7 @@ class _TabItem {
   final Widget page;
 }
 
-class _FloatingTabBar extends StatefulWidget {
+class _FloatingTabBar extends StatelessWidget {
   const _FloatingTabBar({
     required this.height,
     required this.currentIndex,
@@ -93,30 +93,6 @@ class _FloatingTabBar extends StatefulWidget {
   final int currentIndex;
   final List<String> labels;
   final ValueChanged<int> onChanged;
-
-  @override
-  State<_FloatingTabBar> createState() => _FloatingTabBarState();
-}
-
-class _FloatingTabBarState extends State<_FloatingTabBar> {
-  double? _dragLeft;
-  double? _tapPreviewLeft;
-
-  double _leftForIndex({
-    required int index,
-    required double inset,
-    required double segmentWidth,
-  }) {
-    return segmentWidth * index + inset;
-  }
-
-  double _clampLeft({
-    required double desiredLeft,
-    required double inset,
-    required double maxLeft,
-  }) {
-    return desiredLeft.clamp(inset, maxLeft);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,10 +115,10 @@ class _FloatingTabBarState extends State<_FloatingTabBar> {
 
     return ClipRRect(
       borderRadius: AppRadius.pill,
-      child: BackdropFilter(
+          child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
-          height: widget.height,
+          height: height,
           width: double.infinity,
           padding: const EdgeInsets.all(AppSpace.xs),
           decoration: BoxDecoration(
@@ -153,185 +129,25 @@ class _FloatingTabBarState extends State<_FloatingTabBar> {
               width: 0.5,
             ),
           ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final segmentWidth = constraints.maxWidth / widget.labels.length;
-              const double inset = 0;
-              final thumbWidth = segmentWidth - (inset * 2);
-              final maxLeft = constraints.maxWidth - thumbWidth - inset;
-
-              final double left = _clampLeft(
-                desiredLeft: _dragLeft ??
-                    _tapPreviewLeft ??
-                    _leftForIndex(
-                      index: widget.currentIndex,
-                      inset: inset,
-                      segmentWidth: segmentWidth,
+          child: AppSlidingSegmentedControl<int>(
+            segments: [
+              for (var index = 0; index < labels.length; index++)
+                AppSlidingSegment<int>(
+                  value: index,
+                  builder: (context, isSelected) => Text(
+                    labels[index],
+                    style: AppTextStyle.footnote(context).copyWith(
+                      color: isSelected ? activeText : inactiveText,
+                      fontWeight: FontWeight.w600,
                     ),
-                inset: inset,
-                maxLeft: maxLeft,
-              );
-
-              return GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTapDown: (details) {
-                  final desiredLeft = details.localPosition.dx - thumbWidth / 2;
-                  setState(() {
-                    _tapPreviewLeft = _clampLeft(
-                      desiredLeft: desiredLeft,
-                      inset: inset,
-                      maxLeft: maxLeft,
-                    );
-                    _dragLeft = null;
-                  });
-                },
-                onTapUp: (details) {
-                  final tapX = details.localPosition.dx;
-                  final targetIndex = (tapX / segmentWidth)
-                      .clamp(0, widget.labels.length - 1)
-                      .floor();
-                  setState(() {
-                    _tapPreviewLeft = _leftForIndex(
-                      index: targetIndex,
-                      inset: inset,
-                      segmentWidth: segmentWidth,
-                    );
-                    _dragLeft = null;
-                  });
-                  if (targetIndex != widget.currentIndex) {
-                    widget.onChanged(targetIndex);
-                  }
-                },
-                onTapCancel: () {
-                  setState(() {
-                    _tapPreviewLeft = null;
-                    _dragLeft = null;
-                  });
-                },
-                onHorizontalDragStart: (details) {
-                  setState(() {
-                    _tapPreviewLeft = null;
-                    final desiredLeft =
-                        details.localPosition.dx - thumbWidth / 2;
-                    _dragLeft = _clampLeft(
-                      desiredLeft: desiredLeft,
-                      inset: inset,
-                      maxLeft: maxLeft,
-                    );
-                  });
-                },
-                onHorizontalDragUpdate: (details) {
-                  setState(() {
-                    final desiredLeft =
-                        (_dragLeft ?? inset) + details.delta.dx;
-                    _dragLeft = _clampLeft(
-                      desiredLeft: desiredLeft,
-                      inset: inset,
-                      maxLeft: maxLeft,
-                    );
-                  });
-                },
-                onHorizontalDragEnd: (_) {
-                  final currentLeft = left;
-                  final thumbCenter = currentLeft + thumbWidth / 2;
-                  final targetIndex = (thumbCenter / segmentWidth)
-                      .floor()
-                      .clamp(0, widget.labels.length - 1);
-                  setState(() {
-                    _tapPreviewLeft = _leftForIndex(
-                      index: targetIndex,
-                      inset: inset,
-                      segmentWidth: segmentWidth,
-                    );
-                    _dragLeft = null;
-                  });
-                  if (targetIndex != widget.currentIndex) {
-                    widget.onChanged(targetIndex);
-                  }
-                },
-                onLongPressStart: (details) {
-                  setState(() {
-                    final desiredLeft =
-                        details.localPosition.dx - thumbWidth / 2;
-                    _dragLeft = _clampLeft(
-                      desiredLeft: desiredLeft,
-                      inset: inset,
-                      maxLeft: maxLeft,
-                    );
-                  });
-                },
-                onLongPressMoveUpdate: (details) {
-                  setState(() {
-                    final desiredLeft =
-                        details.localPosition.dx - thumbWidth / 2;
-                    _dragLeft = _clampLeft(
-                      desiredLeft: desiredLeft,
-                      inset: inset,
-                      maxLeft: maxLeft,
-                    );
-                  });
-                },
-                onLongPressEnd: (_) {
-                  final currentLeft = left;
-                  final thumbCenter = currentLeft + thumbWidth / 2;
-                  final targetIndex = (thumbCenter / segmentWidth)
-                      .floor()
-                      .clamp(0, widget.labels.length - 1);
-                  setState(() {
-                    _dragLeft = null;
-                  });
-                  if (targetIndex != widget.currentIndex) {
-                    widget.onChanged(targetIndex);
-                  }
-                },
-                onHorizontalDragCancel: () {
-                  setState(() {
-                    _tapPreviewLeft = null;
-                    _dragLeft = null;
-                  });
-                },
-                child: Stack(
-                  children: [
-                    AnimatedPositioned(
-                      duration:
-                          _dragLeft == null ? AppMotion.quick : Duration.zero,
-                      curve: Curves.easeOut,
-                      top: inset,
-                      bottom: inset,
-                      left: left,
-                      width: thumbWidth,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: activeColor,
-                          borderRadius: AppRadius.pill,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        for (var index = 0;
-                            index < widget.labels.length;
-                            index++)
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                widget.labels[index],
-                                style:
-                                    AppTextStyle.footnote(context).copyWith(
-                                  color: index == widget.currentIndex
-                                      ? activeText
-                                      : inactiveText,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              );
-            },
+            ],
+            value: currentIndex,
+            onChanged: onChanged,
+            backgroundColor: CupertinoColors.transparent,
+            thumbColor: activeColor,
+            thumbInset: 0,
           ),
         ),
       ),
