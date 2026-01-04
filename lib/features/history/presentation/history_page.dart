@@ -47,13 +47,21 @@ class _CalendarSheetState extends State<_CalendarSheet> {
   late final DateTime _anchorMonth =
       DateTime(widget.anchorDate.year, widget.anchorDate.month);
   late final List<DateTime> _months = _buildMonths();
-  final GlobalKey _anchorMonthKey = GlobalKey();
+  late DateTime _focusedMonth = _anchorMonth;
+  final Map<String, GlobalKey> _monthKeys = {};
+  final GlobalKey _listKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    for (final month in _months) {
+      _monthKeys[_monthKey(month)] = GlobalKey();
+    }
+    _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final anchorContext = _anchorMonthKey.currentContext;
+      final anchorContext =
+          _monthKeys[_monthKey(_anchorMonth)]?.currentContext;
       if (anchorContext != null) {
         Scrollable.ensureVisible(
           anchorContext,
@@ -63,6 +71,47 @@ class _CalendarSheetState extends State<_CalendarSheet> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    final listBox =
+        _listKey.currentContext?.findRenderObject() as RenderBox?;
+    if (listBox == null) {
+      return;
+    }
+    final viewportTop = listBox.localToGlobal(Offset.zero).dy;
+    final viewportBottom = viewportTop + listBox.size.height;
+
+    DateTime? candidate;
+    double maxVisible = -1;
+
+    for (final month in _months) {
+      final key = _monthKeys[_monthKey(month)];
+      final box = key?.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null) continue;
+      final top = box.localToGlobal(Offset.zero).dy;
+      final bottom = top + box.size.height;
+      final visibleHeight =
+          math.min(bottom, viewportBottom) - math.max(top, viewportTop);
+      if (visibleHeight <= 0) continue;
+      if (visibleHeight > maxVisible) {
+        maxVisible = visibleHeight;
+        candidate = month;
+      }
+    }
+
+    if (candidate != null && !_isSameMonth(candidate, _focusedMonth)) {
+      setState(() {
+        _focusedMonth = candidate!;
+      });
+    }
   }
 
   List<DateTime> _buildMonths() {
@@ -77,36 +126,52 @@ class _CalendarSheetState extends State<_CalendarSheet> {
   @override
   Widget build(BuildContext context) {
     return AppDraggableSheet(
-      title: _fullMonthLabel(_anchorMonth),
+      title: _fullMonthLabel(_focusedMonth),
       primaryLabel: 'Done',
       onPrimary: () => Navigator.of(context).pop(),
-      child: CupertinoScrollbar(
-        child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.l,
-            AppSpace.l,
-            AppSpace.l,
-            AppSpace.xxxl,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.l,
+              vertical: AppSpace.s,
+            ),
+            child: const _WeekdayHeader(),
           ),
-          itemCount: _months.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpace.xl),
-          itemBuilder: (context, index) {
-            final month = _months[index];
-            final isAnchor =
-                month.year == _anchorMonth.year && month.month == _anchorMonth.month;
-            return _MonthSection(
-              key: isAnchor ? _anchorMonthKey : null,
-              month: month,
-              selectedDate: widget.anchorDate,
-              routines: widget.routines,
-              completions: widget.completions,
-              onDateSelected: (date) {
-                widget.onDateSelected(date);
-                Navigator.of(context).pop();
-              },
-            );
-          },
-        ),
+          Expanded(
+            child: CupertinoScrollbar(
+              controller: _scrollController,
+              child: ListView.separated(
+                key: _listKey,
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.l,
+                  AppSpace.s,
+                  AppSpace.l,
+                  AppSpace.xxxl,
+                ),
+                itemCount: _months.length,
+                separatorBuilder: (_, __) => const SizedBox(height: AppSpace.xl),
+                itemBuilder: (context, index) {
+                  final month = _months[index];
+                  final isAnchor =
+                      month.year == _anchorMonth.year && month.month == _anchorMonth.month;
+                  return _MonthSection(
+                    key: _monthKeys[_monthKey(month)],
+                    month: month,
+                    selectedDate: widget.anchorDate,
+                    routines: widget.routines,
+                    completions: widget.completions,
+                    onDateSelected: (date) {
+                      widget.onDateSelected(date);
+                      Navigator.of(context).pop();
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -131,30 +196,34 @@ class _MonthSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final days = _buildCalendarDays(month);
-    final divider = CupertinoDynamicColor.resolve(
-      AppColor.separator,
-      context,
-    );
+    final firstOfMonth = DateTime(month.year, month.month, 1);
+    final weekdayOfFirst = firstOfMonth.weekday % 7;
+    final firstRowOffset = weekdayOfFirst;
+    final weeks = (days.length / 7).ceil();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
-          child: Text(
-            _monthLabel(month),
-            style: AppTextStyle.title1(context).copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columnWidth = constraints.maxWidth / 7;
+            final leftInset = columnWidth * firstRowOffset;
+            return Padding(
+              padding: EdgeInsets.only(left: leftInset),
+              child: SizedBox(
+                width: columnWidth,
+                child: Center(
+                  child: Text(
+                    _monthLabel(month),
+                    style: AppTextStyle.title1(context).copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
-        const SizedBox(height: AppSpace.s),
-        const _WeekdayHeader(),
-        Container(
-          height: 0.5,
-          margin: const EdgeInsets.only(top: AppSpace.s),
-          color: divider,
-        ),
-        const SizedBox(height: AppSpace.m),
+        const SizedBox(height: AppSpace.xs),
         _CalendarGrid(
           month: month,
           days: days,
@@ -162,6 +231,7 @@ class _MonthSection extends StatelessWidget {
           routines: routines,
           completions: completions,
           onDateSelected: onDateSelected,
+          weeks: weeks,
         ),
       ],
     );
@@ -204,6 +274,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.routines,
     required this.completions,
     required this.onDateSelected,
+    required this.weeks,
   });
 
   final DateTime month;
@@ -212,10 +283,11 @@ class _CalendarGrid extends StatelessWidget {
   final List<Routine> routines;
   final Map<String, Map<String, double>> completions;
   final ValueChanged<DateTime> onDateSelected;
+  final int weeks;
 
   @override
   Widget build(BuildContext context) {
-    final rowCount = (days.length / 7).ceil();
+    final rowCount = weeks;
     final normalizedSelected = normalizeDate(selectedDate);
     return Column(
       children: [
@@ -241,6 +313,7 @@ class _CalendarGrid extends StatelessWidget {
             ],
           ),
           if (row != rowCount - 1) const SizedBox(height: AppSpace.m),
+          if (row == rowCount - 1) const SizedBox(height: AppSpace.xl),
         ],
       ],
     );
@@ -264,18 +337,21 @@ class _CalendarDayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!isInMonth) {
+      // Preserve grid spacing without drawing rings for out-of-month dates.
+      return const SizedBox(height: 72);
+    }
+
     final accent = CupertinoDynamicColor.resolve(
       AppColor.accent,
       context,
     );
-    final labelColor = CupertinoDynamicColor.resolve(
-      isSelected
-          ? AppColor.label
-          : isInMonth
-              ? AppColor.label
-              : AppColor.secondaryLabel,
-      context,
-    );
+    final labelColor = isSelected
+        ? CupertinoColors.white
+        : CupertinoDynamicColor.resolve(
+            AppColor.label,
+            context,
+          );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -294,11 +370,20 @@ class _CalendarDayCell extends StatelessWidget {
               faded: !isInMonth,
             ),
             const SizedBox(height: AppSpace.xs),
-            Text(
-              '${date.day}',
-              style: AppTextStyle.body(context).copyWith(
-                color: labelColor,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isSelected ? accent : CupertinoColors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '${date.day}',
+                style: AppTextStyle.body(context).copyWith(
+                  color: labelColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -328,27 +413,14 @@ class _DayRing extends StatelessWidget {
       context,
     );
     final size = isSelected ? 42.0 : 38.0;
-    final background = isSelected
-        ? accent.withOpacity(0.18)
-        : CupertinoColors.transparent;
     final adjustedProgress = progress.clamp(0.0, 1.0);
-    return AnimatedContainer(
-      duration: AppMotion.quick,
-      curve: Curves.easeOut,
-      padding: const EdgeInsets.all(AppSpace.xs),
-      decoration: BoxDecoration(
-        color: background,
-        shape: BoxShape.circle,
-      ),
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: _DayRingPainter(
-          progress: adjustedProgress,
-          progressColor:
-              faded ? accent.withOpacity(0.4) : accent,
-          trackColor: faded ? track.withOpacity(0.4) : track,
-          isSelected: isSelected,
-        ),
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _DayRingPainter(
+        progress: adjustedProgress,
+        progressColor: faded ? accent.withOpacity(0.4) : accent,
+        trackColor: faded ? track.withOpacity(0.4) : track,
+        isSelected: isSelected,
       ),
     );
   }
@@ -499,6 +571,8 @@ DateTime _shiftMonth(DateTime month, int offset) {
   return DateTime(month.year, month.month + offset, 1);
 }
 
+String _monthKey(DateTime month) => '${month.year}-${month.month}';
+
 int _daysInMonth(DateTime month) {
   final startOfNextMonth = DateTime(month.year, month.month + 1, 1);
   return startOfNextMonth.subtract(const Duration(days: 1)).day;
@@ -563,7 +637,7 @@ String _monthLabel(DateTime month) {
     'Dec',
   ];
   final safeIndex = (month.month - 1).clamp(0, short.length - 1);
-  return '${short[safeIndex]} ${month.year}';
+  return short[safeIndex];
 }
 
 double _progressForDate({
@@ -579,6 +653,10 @@ double _progressForDate({
     routines: routines,
     completions: completions,
   );
+}
+
+bool _isSameMonth(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month;
 }
 
 class _HistoryContent extends StatelessWidget {
