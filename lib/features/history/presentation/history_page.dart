@@ -76,92 +76,36 @@ class _CalendarSheetState extends State<_CalendarSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final background = CupertinoDynamicColor.resolve(
-      AppColor.systemBackground,
-      context,
-    );
-    final separator = CupertinoDynamicColor.resolve(
-      AppColor.separator,
-      context,
-    );
-
-    return CupertinoPopupSurface(
-      isSurfacePainted: true,
-      child: SafeArea(
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.92,
-          color: background,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpace.l,
-                  AppSpace.l,
-                  AppSpace.l,
-                  AppSpace.s,
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                        _fullMonthLabel(_anchorMonth),
-                        style: AppTextStyle.title1(context).copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Icon(
-                          CupertinoIcons.xmark_circle,
-                          color: CupertinoDynamicColor.resolve(
-                            AppColor.secondaryLabel,
-                            context,
-                          ),
-                          size: 28,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(height: 0.5, color: separator),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpace.l,
-                    AppSpace.l,
-                    AppSpace.l,
-                    AppSpace.xxxl,
-                  ),
-                  itemCount: _months.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpace.xl),
-                  itemBuilder: (context, index) {
-                    final month = _months[index];
-                    final isAnchor = month.year == _anchorMonth.year &&
-                        month.month == _anchorMonth.month;
-                    return _MonthSection(
-                      key: isAnchor ? _anchorMonthKey : null,
-                      month: month,
-                      selectedDate: widget.anchorDate,
-                      routines: widget.routines,
-                      completions: widget.completions,
-                      onDateSelected: (date) {
-                        widget.onDateSelected(date);
-                        Navigator.of(context).pop();
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
+    return AppDraggableSheet(
+      title: _fullMonthLabel(_anchorMonth),
+      primaryLabel: 'Done',
+      onPrimary: () => Navigator.of(context).pop(),
+      child: CupertinoScrollbar(
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.l,
+            AppSpace.l,
+            AppSpace.l,
+            AppSpace.xxxl,
           ),
+          itemCount: _months.length,
+          separatorBuilder: (_, __) => const SizedBox(height: AppSpace.xl),
+          itemBuilder: (context, index) {
+            final month = _months[index];
+            final isAnchor =
+                month.year == _anchorMonth.year && month.month == _anchorMonth.month;
+            return _MonthSection(
+              key: isAnchor ? _anchorMonthKey : null,
+              month: month,
+              selectedDate: widget.anchorDate,
+              routines: widget.routines,
+              completions: widget.completions,
+              onDateSelected: (date) {
+                widget.onDateSelected(date);
+                Navigator.of(context).pop();
+              },
+            );
+          },
         ),
       ),
     );

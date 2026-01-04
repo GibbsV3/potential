@@ -712,9 +712,6 @@ class _TaskSheetState extends State<_TaskSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _detailsController;
   late Priority _priority;
-  double? _dragStartY;
-  double _dragExtent = 0;
-  bool _isDragging = false;
 
   @override
   void initState() {
@@ -734,241 +731,111 @@ class _TaskSheetState extends State<_TaskSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final background = CupertinoDynamicColor.resolve(
-      AppColor.systemBackground,
-      context,
-    );
     final inputBackground = CupertinoDynamicColor.resolve(
       AppColor.secondarySystemGroupedBackground,
       context,
     );
     final destructive = CupertinoColors.destructiveRed;
     final isEditing = widget.task != null;
-    final media = MediaQuery.of(context);
-    final sheetHeight = media.size.height - media.padding.top;
-    final currentHeight =
-        (sheetHeight - _dragExtent).clamp(sheetHeight * 0.2, sheetHeight);
-
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: AnimatedContainer(
-        duration: _isDragging ? Duration.zero : AppMotion.quick,
-        height: currentHeight,
-        child: CupertinoPopupSurface(
-          isSurfacePainted: true,
-          child: AnimatedPadding(
-            duration: AppMotion.quick,
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+    return AppDraggableSheet(
+      title: widget.title,
+      primaryLabel: isEditing ? 'Save' : 'Add',
+      primaryEnabled: _titleController.text.trim().isNotEmpty,
+      onPrimary: _submit,
+      child: CupertinoScrollbar(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.l,
+            AppSpace.l,
+            AppSpace.l,
+            AppSpace.xxxl,
           ),
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: DecoratedBox(
-              decoration: BoxDecoration(color: background),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpace.l,
-                        AppSpace.m,
-                        AppSpace.l,
-                        AppSpace.s,
-                      ),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.deferToChild,
-                        onVerticalDragStart: (details) {
-                          _dragStartY = details.globalPosition.dy;
-                          _dragExtent = 0;
-                          _isDragging = true;
-                        },
-                        onVerticalDragUpdate: (details) {
-                          if (_dragStartY == null) {
-                            return;
-                          }
-                          final delta =
-                              details.globalPosition.dy - _dragStartY!;
-                          if (delta <= 0) {
-                            return;
-                          }
-                          setState(() {
-                            _dragExtent =
-                                delta.clamp(0, sheetHeight).toDouble();
-                            _isDragging = true;
-                          });
-                        },
-                        onVerticalDragCancel: () {
-                          _dragStartY = null;
-                          setState(() {
-                            _dragExtent = 0;
-                            _isDragging = false;
-                          });
-                        },
-                        onVerticalDragEnd: (details) {
-                          final velocity = details.primaryVelocity ?? 0;
-                          final dismissByVelocity = velocity > 900;
-                          final shouldDismiss =
-                              currentHeight < sheetHeight * 0.4;
-                          if (shouldDismiss || dismissByVelocity) {
-                            HapticFeedback.selectionClick();
-                            Navigator.of(context).pop();
-                          } else {
-                            setState(() {
-                              _dragExtent = 0;
-                              _isDragging = false;
-                            });
-                          }
-                          _dragStartY = null;
-                          _isDragging = false;
-                        },
-                        child: Row(
-                          children: [
-                            CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                HapticFeedback.selectionClick();
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                            Expanded(
-                              child: Text(
-                                widget.title,
-                                textAlign: TextAlign.center,
-                                style: AppTextStyle.title3(context).copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: _titleController.text.trim().isEmpty
-                                  ? null
-                                  : _submit,
-                              child: Text(
-                                isEditing ? 'Save' : 'Add',
-                                style: AppTextStyle.body(context).copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: _titleController.text.trim().isEmpty
-                                      ? CupertinoDynamicColor.resolve(
-                                          AppColor.secondaryLabel,
-                                          context,
-                                        )
-                                      : CupertinoDynamicColor.resolve(
-                                          AppColor.accent,
-                                          context,
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),                    
-                    Expanded(
-                      child: CupertinoScrollbar(
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpace.l,
-                            AppSpace.l,
-                            AppSpace.l,
-                            AppSpace.xxxl,
-                          ),
-                          children: [
-                              CupertinoTextField(
-                                controller: _titleController,
-                                placeholder: 'Task name',
-                                textInputAction: TextInputAction.done,
-                                decoration: BoxDecoration(
-                                  color: inputBackground,
-                                  borderRadius: AppRadius.card,
-                                ),
-                                onChanged: (_) => setState(() {}),
-                                onSubmitted: (_) => _submit(),
-                              ),
-                              const SizedBox(height: AppSpace.l),
-                              Text(
-                                'Priority',
-                                style: AppTextStyle.body(context).copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpace.m,
-                                ),
-                                child: _PrioritySelector(
-                                  value: _priority,
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      HapticFeedback.selectionClick();
-                                      setState(() {
-                                        _priority = value;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: AppSpace.m),
-                              Text(
-                                'Details',
-                                style: AppTextStyle.body(context).copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpace.s),
-                              CupertinoTextField(
-                                controller: _detailsController,
-                                placeholder: 'Add notes or steps',
-                                maxLines: 4,
-                                minLines: 3,
-                                keyboardType: TextInputType.multiline,
-                                decoration: BoxDecoration(
-                                  color: inputBackground,
-                                  borderRadius: AppRadius.card,
-                                ),
-                                onChanged: (_) => setState(() {}),
-                              ),
-                              if (isEditing) ...[
-                                const SizedBox(height: AppSpace.l),
-                                CupertinoButton(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: AppSpace.s,
-                                    horizontal: AppSpace.m,
-                                  ),
-                                  borderRadius: AppRadius.pill,
-                                  color: destructive.withOpacity(0.12),
-                                  onPressed: () {
-                                    HapticFeedback.mediumImpact();
-                                    context.read<EditRoutineBloc>().add(
-                                          EditRoutineTaskRemoved(
-                                            widget.task!.id,
-                                          ),
-                                        );
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text(
-                                    'Delete Task',
-                                    style: AppTextStyle.body(context).copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: destructive,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+          children: [
+            CupertinoTextField(
+              controller: _titleController,
+              placeholder: 'Task name',
+              textInputAction: TextInputAction.done,
+              decoration: BoxDecoration(
+                color: inputBackground,
+                borderRadius: AppRadius.card,
+              ),
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: AppSpace.l),
+            Text(
+              'Priority',
+              style: AppTextStyle.body(context).copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpace.m,
+              ),
+              child: _PrioritySelector(
+                value: _priority,
+                onChanged: (value) {
+                  if (value != null) {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _priority = value;
+                    });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpace.m),
+            Text(
+              'Details',
+              style: AppTextStyle.body(context).copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpace.s),
+            CupertinoTextField(
+              controller: _detailsController,
+              placeholder: 'Add notes or steps',
+              maxLines: 4,
+              minLines: 3,
+              keyboardType: TextInputType.multiline,
+              decoration: BoxDecoration(
+                color: inputBackground,
+                borderRadius: AppRadius.card,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            if (isEditing) ...[
+              const SizedBox(height: AppSpace.l),
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpace.s,
+                  horizontal: AppSpace.m,
+                ),
+                borderRadius: AppRadius.pill,
+                color: destructive.withOpacity(0.12),
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  context.read<EditRoutineBloc>().add(
+                        EditRoutineTaskRemoved(
+                          widget.task!.id,
+                        ),
+                      );
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  'Delete Task',
+                  style: AppTextStyle.body(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: destructive,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
-    ));
+    );
   }
 
   void _submit() {
