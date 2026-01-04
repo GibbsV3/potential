@@ -1,8 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'priority.dart';
-import 'task.dart';
-import 'weekday.dart';
+import 'package:potential/potential.dart';
 
 class Routine extends Equatable {
   const Routine({

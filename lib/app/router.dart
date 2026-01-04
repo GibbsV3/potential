@@ -1,8 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 
-import 'tabs_page.dart';
-import '../features/routine_edit/presentation/edit_routine_page.dart';
+import 'package:potential/potential.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 

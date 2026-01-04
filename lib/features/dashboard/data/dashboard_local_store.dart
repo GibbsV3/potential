@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'routine_model.dart';
+import 'package:potential/potential.dart';
 
 class DashboardLocalStore {
   DashboardLocalStore(this._prefs);

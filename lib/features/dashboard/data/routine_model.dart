@@ -1,7 +1,4 @@
-import '../../../core/domain/routine.dart';
-import '../../../core/domain/priority.dart';
-import '../../../core/domain/weekday.dart';
-import 'task_model.dart';
+import 'package:potential/potential.dart';
 
 class RoutineModel extends Routine {
   const RoutineModel({

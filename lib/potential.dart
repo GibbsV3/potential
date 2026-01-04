@@ -15,7 +15,7 @@ export 'design_system/app_space.dart';
 export 'design_system/app_text_style.dart';
 export 'design_system/app_theme.dart';
 export 'design_system/design_system.dart';
-export 'features/dashboard/data/dashboard_local_store.dart';
+export 'features/features.dart';
 export 'features/dashboard/data/local_dashboard_repository.dart';
 export 'features/dashboard/data/routine_model.dart';
 export 'features/dashboard/data/task_model.dart';

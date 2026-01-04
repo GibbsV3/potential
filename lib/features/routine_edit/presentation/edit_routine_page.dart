@@ -3,12 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/data/dashboard_repository.dart';
-import '../../../core/domain/priority.dart';
-import '../../../core/domain/task.dart';
-import '../../../core/domain/weekday.dart';
-import '../../../design_system/design_system.dart';
-import 'edit_routine_bloc.dart';
+import 'package:potential/potential.dart';
 
 class EditRoutinePage extends StatelessWidget {
   const EditRoutinePage({

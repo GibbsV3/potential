@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
-import '../design_system.dart';
+import 'package:potential/potential.dart';
 
 class AppSlidingSegment<T> {
   const AppSlidingSegment({

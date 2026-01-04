@@ -1,11 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../core/data/dashboard_repository.dart';
-import '../../../core/domain/routine.dart';
-import '../../../core/domain/priority.dart';
-import '../../../core/domain/task.dart';
-import '../../../core/domain/weekday.dart';
+import 'package:potential/potential.dart';
 
 part 'edit_routine_event.dart';
 part 'edit_routine_state.dart';

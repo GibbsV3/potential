@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
-import 'app_color.dart';
+import 'package:potential/potential.dart';
 
 class AppTheme {
   const AppTheme._();

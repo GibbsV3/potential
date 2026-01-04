@@ -1,6 +1,4 @@
-import 'routine.dart';
-import 'routine_progress.dart';
-import 'weekday.dart';
+import 'package:potential/potential.dart';
 
 DateTime normalizeDate(DateTime date) {
   return DateTime(date.year, date.month, date.day);

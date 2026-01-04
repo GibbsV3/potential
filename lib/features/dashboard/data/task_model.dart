@@ -1,5 +1,4 @@
-import '../../../core/domain/priority.dart';
-import '../../../core/domain/task.dart';
+import 'package:potential/potential.dart';
 
 class TaskModel extends Task {
   const TaskModel({

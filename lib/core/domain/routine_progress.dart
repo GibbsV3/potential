@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'routine.dart';
+import 'package:potential/potential.dart';
 
 class RoutineProgress extends Equatable {
   const RoutineProgress({

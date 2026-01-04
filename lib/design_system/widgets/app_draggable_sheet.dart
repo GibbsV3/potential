@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
-import '../design_system.dart';
+import 'package:potential/potential.dart';
 
 /// Draggable Cupertino sheet with a standard header and pull-to-dismiss gesture.
 class AppDraggableSheet extends StatefulWidget {

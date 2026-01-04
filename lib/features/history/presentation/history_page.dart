@@ -6,11 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/data/dashboard_repository.dart';
-import '../../../core/domain/progress_calculator.dart';
-import '../../../core/domain/routine.dart';
-import '../../../design_system/design_system.dart';
-import 'bloc/history_bloc.dart';
+import 'package:potential/potential.dart';
 
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});

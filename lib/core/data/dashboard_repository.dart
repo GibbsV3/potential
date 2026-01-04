@@ -1,4 +1,4 @@
-import '../domain/routine.dart';
+import 'package:potential/potential.dart';
 
 abstract class DashboardRepository {
   const DashboardRepository();

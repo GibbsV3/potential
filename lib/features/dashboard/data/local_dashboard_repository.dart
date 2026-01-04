@@ -1,12 +1,6 @@
 import 'dart:async';
 
-import '../../../core/data/dashboard_repository.dart';
-import '../../../core/domain/routine.dart';
-import '../../../core/domain/priority.dart';
-import '../../../core/domain/task.dart';
-import '../../../core/domain/weekday.dart';
-import 'dashboard_local_store.dart';
-import 'routine_model.dart';
+import 'package:potential/potential.dart';
 
 class LocalDashboardRepository extends DashboardRepository {
   LocalDashboardRepository(this._store);

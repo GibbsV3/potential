@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'priority.dart';
+import 'package:potential/potential.dart';
 
 class Task extends Equatable {
   const Task({

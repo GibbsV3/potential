@@ -2,10 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 
-import '../design_system/design_system.dart';
-import '../features/dashboard/presentation/dashboard_page.dart';
-import '../features/history/presentation/history_page.dart';
-import '../features/routines/presentation/routines_page.dart';
+import 'package:potential/potential.dart';
 
 class TabsPage extends StatefulWidget {
   const TabsPage({super.key});
