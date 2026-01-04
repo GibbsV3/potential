@@ -590,10 +590,9 @@ class _WeekdayChip extends StatelessWidget {
         horizontal: AppSpace.m,
         vertical: AppSpace.s,
       ),
-      minSize: 32,
       borderRadius: AppRadius.pill,
       color: background,
-      onPressed: onTap,
+      onPressed: onTap, minimumSize: Size(32, 32),
       child: Text(
         label,
         style: AppTextStyle.body(context).copyWith(

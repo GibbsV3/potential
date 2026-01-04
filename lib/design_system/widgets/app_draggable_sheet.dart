@@ -66,60 +66,61 @@ class _AppDraggableSheetState extends State<AppDraggableSheet> {
                   top: false,
                   child: Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpace.l,
-                          AppSpace.m,
-                          AppSpace.l,
-                          AppSpace.s,
-                        ),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.deferToChild,
-                          onVerticalDragStart: (details) {
-                            _dragStartY = details.globalPosition.dy;
-                            _dragExtent = 0;
+                      GestureDetector(
+                        // Make the entire header area draggable, not just its children.
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: (details) {
+                          _dragStartY = details.globalPosition.dy;
+                          _dragExtent = 0;
+                          _isDragging = true;
+                        },
+                        onVerticalDragUpdate: (details) {
+                          if (_dragStartY == null) return;
+                          final delta =
+                              details.globalPosition.dy - _dragStartY!;
+                          if (delta <= 0) {
+                            return;
+                          }
+                          setState(() {
+                            _dragExtent =
+                                delta.clamp(0, sheetHeight).toDouble();
                             _isDragging = true;
-                          },
-                          onVerticalDragUpdate: (details) {
-                            if (_dragStartY == null) return;
-                            final delta =
-                                details.globalPosition.dy - _dragStartY!;
-                            if (delta <= 0) {
-                              return;
-                            }
-                            setState(() {
-                              _dragExtent =
-                                  delta.clamp(0, sheetHeight).toDouble();
-                              _isDragging = true;
-                            });
-                          },
-                          onVerticalDragCancel: () {
-                            _dragStartY = null;
+                          });
+                        },
+                        onVerticalDragCancel: () {
+                          _dragStartY = null;
+                          setState(() {
+                            _dragExtent = 0;
+                            _isDragging = false;
+                          });
+                        },
+                        onVerticalDragEnd: (details) {
+                          final velocity = details.primaryVelocity ?? 0;
+                          final dismissByVelocity = velocity > 900;
+                          final updatedCurrentHeight =
+                              (sheetHeight - _dragExtent)
+                                  .clamp(sheetHeight * 0.2, sheetHeight);
+                          final shouldDismiss =
+                              updatedCurrentHeight < sheetHeight * 0.4;
+                          if (shouldDismiss || dismissByVelocity) {
+                            HapticFeedback.selectionClick();
+                            _dismiss();
+                          } else {
                             setState(() {
                               _dragExtent = 0;
                               _isDragging = false;
                             });
-                          },
-                          onVerticalDragEnd: (details) {
-                            final velocity = details.primaryVelocity ?? 0;
-                            final dismissByVelocity = velocity > 900;
-                            final updatedCurrentHeight =
-                                (sheetHeight - _dragExtent)
-                                    .clamp(sheetHeight * 0.2, sheetHeight);
-                            final shouldDismiss =
-                                updatedCurrentHeight < sheetHeight * 0.4;
-                            if (shouldDismiss || dismissByVelocity) {
-                              HapticFeedback.selectionClick();
-                              _dismiss();
-                            } else {
-                              setState(() {
-                                _dragExtent = 0;
-                                _isDragging = false;
-                              });
-                            }
-                            _dragStartY = null;
-                            _isDragging = false;
-                          },
+                          }
+                          _dragStartY = null;
+                          _isDragging = false;
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpace.l,
+                            AppSpace.m,
+                            AppSpace.l,
+                            AppSpace.s,
+                          ),
                           child: Row(
                             children: [
                               CupertinoButton(
