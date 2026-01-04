@@ -119,6 +119,7 @@ class _FloatingTabBar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
           height: height,
+          width: double.infinity,
           padding: const EdgeInsets.all(AppSpace.xs),
           decoration: BoxDecoration(
             color: barColor.withOpacity(0.75),
@@ -128,40 +129,86 @@ class _FloatingTabBar extends StatelessWidget {
               width: 0.5,
             ),
           ),
-          child: Row(
+          child: Stack(
             children: [
-              for (var index = 0; index < labels.length; index++)
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onChanged(index),
-                    child: AnimatedContainer(
-                      duration: AppMotion.quick,
-                      curve: Curves.easeOut,
-                      margin:
-                          const EdgeInsets.symmetric(horizontal: AppSpace.xs),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSpace.s,
-                      ),
-                      decoration: BoxDecoration(
-                        color: index == currentIndex
-                            ? activeColor
-                            : CupertinoColors.transparent,
-                        borderRadius: AppRadius.pill,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        labels[index],
-                        style: AppTextStyle.footnote(context).copyWith(
-                          color: index == currentIndex
-                              ? activeText
-                              : inactiveText,
-                          fontWeight: FontWeight.w600,
+              // Keep CupertinoSlidingSegmentedControl for interaction semantics.
+              Opacity(
+                opacity: 0,
+                alwaysIncludeSemantics: true,
+                child: SizedBox.expand(
+                  child: CupertinoSlidingSegmentedControl<int>(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
+                    groupValue: currentIndex,
+                    thumbColor: CupertinoColors.transparent,
+                    backgroundColor: CupertinoColors.transparent,
+                    onValueChanged: (index) {
+                      if (index != null) {
+                        onChanged(index);
+                      }
+                    },
+                    children: {
+                      for (var index = 0; index < labels.length; index++)
+                        index: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpace.s,
+                          ),
+                          child: Text(
+                            labels[index],
+                            style: AppTextStyle.footnote(context),
+                          ),
                         ),
-                      ),
-                    ),
+                    },
                   ),
                 ),
+              ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final segmentWidth = constraints.maxWidth / labels.length;
+                  const double inset =0;
+
+                  return Stack(
+                    children: [
+                      AnimatedPositioned(
+                        duration: AppMotion.quick,
+                        curve: Curves.easeOut,
+                        top: inset,
+                        bottom: inset,
+                        left: segmentWidth * currentIndex + inset,
+                        width: segmentWidth - (inset * 2),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: activeColor,
+                            borderRadius: AppRadius.pill,
+                          ),
+                        ),
+                      ),
+                      IgnorePointer(
+                        child: Row(
+                          children: [
+                            for (var index = 0;
+                                index < labels.length;
+                                index++)
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    labels[index],
+                                    style: AppTextStyle.footnote(context)
+                                        .copyWith(
+                                      color: index == currentIndex
+                                          ? activeText
+                                          : inactiveText,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
