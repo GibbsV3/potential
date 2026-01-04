@@ -65,21 +65,16 @@ class DashboardState extends Equatable {
     Map<String, Map<String, double>>? completions,
     String? errorMessage,
   }) {
-    final resolvedDate = _normalizeDate(selectedDate ?? this.selectedDate);
+    final resolvedDate = normalizeDate(selectedDate ?? this.selectedDate);
     final resolvedRoutines = routines ?? this.routines;
     final resolvedCompletions = completions ?? this.completions;
-    final resolvedWeekday = Weekday.fromDate(resolvedDate);
-    final filteredRoutines = resolvedRoutines
-        .where((routine) =>
-            routine.isActive &&
-            routine.weekdays.contains(resolvedWeekday))
-        .toList();
+    final filteredRoutines = routinesForDate(resolvedRoutines, resolvedDate);
     final dayCompletions =
-        _completionsForDate(resolvedDate, resolvedCompletions);
+        completionsForDate(resolvedDate, resolvedCompletions);
     final routineProgress =
-        _routineProgressForDate(filteredRoutines, dayCompletions);
+        routineProgressForDate(filteredRoutines, dayCompletions);
     final double dailyProgress =
-        _dailyProgressForDate(filteredRoutines, routineProgress);
+        dailyProgressForDate(filteredRoutines, routineProgress);
 
     return DashboardState(
       status: status ?? this.status,
@@ -94,20 +89,11 @@ class DashboardState extends Equatable {
   }
 
   double progressForDate(DateTime date) {
-    final normalizedDate = _normalizeDate(date);
-    final normalizedWeekday = Weekday.fromDate(normalizedDate);
-    final routinesForDate = routines
-        .where((routine) =>
-            routine.isActive &&
-            routine.weekdays.contains(normalizedWeekday))
-        .toList();
-    if (routinesForDate.isEmpty) {
-      return 0;
-    }
-    final dayCompletions = _completionsForDate(normalizedDate, completions);
-    final dayRoutineProgress =
-        _routineProgressForDate(routinesForDate, dayCompletions);
-    return _dailyProgressForDate(routinesForDate, dayRoutineProgress);
+    return weightedProgressForDate(
+      date: date,
+      routines: routines,
+      completions: completions,
+    );
   }
 
   @override
@@ -121,51 +107,4 @@ class DashboardState extends Equatable {
         selectedDayCompletions,
         errorMessage,
       ];
-}
-
-DateTime _normalizeDate(DateTime date) {
-  return DateTime(date.year, date.month, date.day);
-}
-
-Map<String, double> _completionsForDate(
-  DateTime date,
-  Map<String, Map<String, double>> completions,
-) {
-  return Map<String, double>.from(completions[dateKey(date)] ?? {});
-}
-
-List<RoutineProgress> _routineProgressForDate(
-  List<Routine> routines,
-  Map<String, double> dayCompletions,
-) {
-  return routines.map((routine) {
-    final totalWeight = routine.tasks.fold<double>(
-      0,
-      (sum, task) => sum + task.weight,
-    );
-    final completedWeight = routine.tasks.fold<double>(
-      0,
-      (sum, task) =>
-          sum + (task.weight * (dayCompletions[task.id] ?? 0)),
-    );
-    final double completion =
-        totalWeight == 0 ? 0 : completedWeight / totalWeight;
-    return RoutineProgress(routine: routine, completion: completion);
-  }).toList();
-}
-
-double _dailyProgressForDate(
-  List<Routine> routines,
-  List<RoutineProgress> routineProgress,
-) {
-  final routineWeightTotal = routines.fold<double>(
-    0,
-    (sum, routine) => sum + routine.weight,
-  );
-  final weightedCompletion = routineProgress.fold<double>(
-    0,
-    (sum, progress) =>
-        sum + (progress.routine.weight * progress.completion),
-  );
-  return routineWeightTotal == 0 ? 0 : weightedCompletion / routineWeightTotal;
 }

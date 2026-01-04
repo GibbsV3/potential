@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../core/domain/routine.dart';
+import 'routine.dart';
 
 class RoutineProgress extends Equatable {
   const RoutineProgress({
