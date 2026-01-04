@@ -41,3 +41,10 @@
   Why: iOS HIG - Modality and Sheets (use full-screen modals for focused edits) and System Controls (keep weighting via existing priority control to avoid redundant inputs).
   Tradeoffs: Weight now derives from priority levels instead of manual entry.
   Open questions: Should tasks support richer metadata like checklists or due times?
+
+- Context: History calendar sheet
+  What screenshot suggested: A dark, Monday-start calendar with pink rings and no obvious month pinning.
+  What we implemented: A Cupertino popup calendar using Sunday-start weeks (matching app calculations), semantic accent rings, and a pinned anchor-month header with nearby months for quick scroll.
+  Why: iOS HIG - Consistency (align week boundaries and accent usage across the app) and System Colors (prefer semantic accent rather than screenshot-specific tint).
+  Tradeoffs: Week alignment differs from the screenshot, and only a limited month range is preloaded for snappy load.
+  Open questions: Should we switch to Monday-first weeks or extend navigation beyond the two-month lookahead?

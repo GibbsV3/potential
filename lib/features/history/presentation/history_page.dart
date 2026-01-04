@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/data/dashboard_repository.dart';
+import '../../../core/domain/progress_calculator.dart';
+import '../../../core/domain/routine.dart';
 import '../../../design_system/design_system.dart';
 import 'bloc/history_bloc.dart';
 
@@ -23,6 +26,443 @@ class HistoryPage extends StatelessWidget {
   }
 }
 
+class _CalendarSheet extends StatefulWidget {
+  const _CalendarSheet({
+    required this.anchorDate,
+    required this.routines,
+    required this.completions,
+    required this.onDateSelected,
+  });
+
+  final DateTime anchorDate;
+  final List<Routine> routines;
+  final Map<String, Map<String, double>> completions;
+  final ValueChanged<DateTime> onDateSelected;
+
+  @override
+  State<_CalendarSheet> createState() => _CalendarSheetState();
+}
+
+class _CalendarSheetState extends State<_CalendarSheet> {
+  late final DateTime _anchorMonth =
+      DateTime(widget.anchorDate.year, widget.anchorDate.month);
+  late final List<DateTime> _months = _buildMonths();
+  final GlobalKey _anchorMonthKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchorContext = _anchorMonthKey.currentContext;
+      if (anchorContext != null) {
+        Scrollable.ensureVisible(
+          anchorContext,
+          duration: AppMotion.quick,
+          curve: Curves.easeOut,
+          alignment: 0.02,
+        );
+      }
+    });
+  }
+
+  List<DateTime> _buildMonths() {
+    // Show the anchor month with one month before and two months after
+    // to mirror the inspirational scroll while keeping content manageable.
+    return List<DateTime>.generate(
+      4,
+      (index) => _shiftMonth(_anchorMonth, index - 1),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final background = CupertinoDynamicColor.resolve(
+      AppColor.systemBackground,
+      context,
+    );
+    final separator = CupertinoDynamicColor.resolve(
+      AppColor.separator,
+      context,
+    );
+
+    return CupertinoPopupSurface(
+      isSurfacePainted: true,
+      child: SafeArea(
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.92,
+          color: background,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.l,
+                  AppSpace.l,
+                  AppSpace.l,
+                  AppSpace.s,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        _fullMonthLabel(_anchorMonth),
+                        style: AppTextStyle.title1(context).copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Icon(
+                          CupertinoIcons.xmark_circle,
+                          color: CupertinoDynamicColor.resolve(
+                            AppColor.secondaryLabel,
+                            context,
+                          ),
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(height: 0.5, color: separator),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpace.l,
+                    AppSpace.l,
+                    AppSpace.l,
+                    AppSpace.xxxl,
+                  ),
+                  itemCount: _months.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpace.xl),
+                  itemBuilder: (context, index) {
+                    final month = _months[index];
+                    final isAnchor = month.year == _anchorMonth.year &&
+                        month.month == _anchorMonth.month;
+                    return _MonthSection(
+                      key: isAnchor ? _anchorMonthKey : null,
+                      month: month,
+                      selectedDate: widget.anchorDate,
+                      routines: widget.routines,
+                      completions: widget.completions,
+                      onDateSelected: (date) {
+                        widget.onDateSelected(date);
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthSection extends StatelessWidget {
+  const _MonthSection({
+    super.key,
+    required this.month,
+    required this.selectedDate,
+    required this.routines,
+    required this.completions,
+    required this.onDateSelected,
+  });
+
+  final DateTime month;
+  final DateTime selectedDate;
+  final List<Routine> routines;
+  final Map<String, Map<String, double>> completions;
+  final ValueChanged<DateTime> onDateSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final days = _buildCalendarDays(month);
+    final divider = CupertinoDynamicColor.resolve(
+      AppColor.separator,
+      context,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
+          child: Text(
+            _monthLabel(month),
+            style: AppTextStyle.title1(context).copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpace.s),
+        const _WeekdayHeader(),
+        Container(
+          height: 0.5,
+          margin: const EdgeInsets.only(top: AppSpace.s),
+          color: divider,
+        ),
+        const SizedBox(height: AppSpace.m),
+        _CalendarGrid(
+          month: month,
+          days: days,
+          selectedDate: selectedDate,
+          routines: routines,
+          completions: completions,
+          onDateSelected: onDateSelected,
+        ),
+      ],
+    );
+  }
+}
+
+class _WeekdayHeader extends StatelessWidget {
+  const _WeekdayHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final secondary = CupertinoDynamicColor.resolve(
+      AppColor.secondaryLabel,
+      context,
+    );
+    const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    return Row(
+      children: [
+        for (final label in labels)
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyle.caption(context).copyWith(
+                color: secondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CalendarGrid extends StatelessWidget {
+  const _CalendarGrid({
+    required this.month,
+    required this.days,
+    required this.selectedDate,
+    required this.routines,
+    required this.completions,
+    required this.onDateSelected,
+  });
+
+  final DateTime month;
+  final List<DateTime> days;
+  final DateTime selectedDate;
+  final List<Routine> routines;
+  final Map<String, Map<String, double>> completions;
+  final ValueChanged<DateTime> onDateSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final rowCount = (days.length / 7).ceil();
+    final normalizedSelected = normalizeDate(selectedDate);
+    return Column(
+      children: [
+        for (var row = 0; row < rowCount; row++) ...[
+          Row(
+            children: [
+              for (var col = 0; col < 7; col++)
+                Expanded(
+                  child: _CalendarDayCell(
+                    date: days[(row * 7) + col],
+                    isInMonth: days[(row * 7) + col].month == month.month &&
+                        days[(row * 7) + col].year == month.year,
+                    isSelected: normalizeDate(days[(row * 7) + col]) ==
+                        normalizedSelected,
+                    progress: _progressForDate(
+                      date: days[(row * 7) + col],
+                      routines: routines,
+                      completions: completions,
+                    ),
+                    onSelected: onDateSelected,
+                  ),
+                ),
+            ],
+          ),
+          if (row != rowCount - 1) const SizedBox(height: AppSpace.m),
+        ],
+      ],
+    );
+  }
+}
+
+class _CalendarDayCell extends StatelessWidget {
+  const _CalendarDayCell({
+    required this.date,
+    required this.isInMonth,
+    required this.isSelected,
+    required this.progress,
+    required this.onSelected,
+  });
+
+  final DateTime date;
+  final bool isInMonth;
+  final bool isSelected;
+  final double progress;
+  final ValueChanged<DateTime> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = CupertinoDynamicColor.resolve(
+      AppColor.accent,
+      context,
+    );
+    final labelColor = CupertinoDynamicColor.resolve(
+      isSelected
+          ? AppColor.label
+          : isInMonth
+              ? AppColor.label
+              : AppColor.secondaryLabel,
+      context,
+    );
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onSelected(normalizeDate(date));
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpace.xs),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _DayRing(
+              progress: progress,
+              isSelected: isSelected,
+              accent: accent,
+              faded: !isInMonth,
+            ),
+            const SizedBox(height: AppSpace.xs),
+            Text(
+              '${date.day}',
+              style: AppTextStyle.body(context).copyWith(
+                color: labelColor,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DayRing extends StatelessWidget {
+  const _DayRing({
+    required this.progress,
+    required this.isSelected,
+    required this.accent,
+    required this.faded,
+  });
+
+  final double progress;
+  final bool isSelected;
+  final Color accent;
+  final bool faded;
+
+  @override
+  Widget build(BuildContext context) {
+    final track = CupertinoDynamicColor.resolve(
+      AppColor.separator,
+      context,
+    );
+    final size = isSelected ? 42.0 : 38.0;
+    final background = isSelected
+        ? accent.withOpacity(0.18)
+        : CupertinoColors.transparent;
+    final adjustedProgress = progress.clamp(0.0, 1.0);
+    return AnimatedContainer(
+      duration: AppMotion.quick,
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.all(AppSpace.xs),
+      decoration: BoxDecoration(
+        color: background,
+        shape: BoxShape.circle,
+      ),
+      child: CustomPaint(
+        size: Size.square(size),
+        painter: _DayRingPainter(
+          progress: adjustedProgress,
+          progressColor:
+              faded ? accent.withOpacity(0.4) : accent,
+          trackColor: faded ? track.withOpacity(0.4) : track,
+          isSelected: isSelected,
+        ),
+      ),
+    );
+  }
+}
+
+class _DayRingPainter extends CustomPainter {
+  _DayRingPainter({
+    required this.progress,
+    required this.progressColor,
+    required this.trackColor,
+    required this.isSelected,
+  });
+
+  final double progress;
+  final Color progressColor;
+  final Color trackColor;
+  final bool isSelected;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokeWidth = isSelected ? 3.0 : 2.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    if (progress <= 0) {
+      return;
+    }
+
+    final progressPaint = Paint()
+      ..color = progressColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final sweepAngle = (math.pi * 2) * progress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      sweepAngle,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _DayRingPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.isSelected != isSelected;
+  }
+}
+
 class _HistoryView extends StatelessWidget {
   const _HistoryView();
 
@@ -37,6 +477,8 @@ class _HistoryView extends StatelessWidget {
                 largeTitle: const Text('History'),
                 trailing: _CalendarButton(
                   anchorDate: state.anchorDate,
+                  routines: state.routines,
+                  completions: state.completions,
                   onDateSelected: (date) {
                     context
                         .read<HistoryBloc>()
@@ -66,10 +508,14 @@ class _HistoryView extends StatelessWidget {
 class _CalendarButton extends StatelessWidget {
   const _CalendarButton({
     required this.anchorDate,
+    required this.routines,
+    required this.completions,
     required this.onDateSelected,
   });
 
   final DateTime anchorDate;
+  final List<Routine> routines;
+  final Map<String, Map<String, double>> completions;
   final ValueChanged<DateTime> onDateSelected;
 
   @override
@@ -81,7 +527,7 @@ class _CalendarButton extends StatelessWidget {
     return CupertinoButton(
       padding: EdgeInsets.zero,
       alignment: Alignment.centerRight,
-      onPressed: () => _showPicker(context),
+      onPressed: () => _showCalendar(context),
       child: Icon(
         CupertinoIcons.calendar,
         size: 22,
@@ -90,71 +536,105 @@ class _CalendarButton extends StatelessWidget {
     );
   }
 
-  Future<void> _showPicker(BuildContext context) async {
-    DateTime tempDate = anchorDate;
+  Future<void> _showCalendar(BuildContext context) async {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (context) {
-        return Container(
-          height: 330,
-          color: CupertinoDynamicColor.resolve(
-            AppColor.systemBackground,
-            context,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.l,
-                    vertical: AppSpace.s,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Cancel'),
-                      ),
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.of(context).pop();
-                          onDateSelected(tempDate);
-                        },
-                        child: const Text('Done'),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  height: 0.5,
-                  color: CupertinoDynamicColor.resolve(
-                    AppColor.separator,
-                    context,
-                  ),
-                ),
-                Expanded(
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.date,
-                    initialDateTime: anchorDate,
-                    onDateTimeChanged: (date) {
-                      tempDate = date;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return _CalendarSheet(
+          anchorDate: anchorDate,
+          routines: routines,
+          completions: completions,
+          onDateSelected: onDateSelected,
         );
       },
     );
   }
+}
+
+DateTime _shiftMonth(DateTime month, int offset) {
+  return DateTime(month.year, month.month + offset, 1);
+}
+
+int _daysInMonth(DateTime month) {
+  final startOfNextMonth = DateTime(month.year, month.month + 1, 1);
+  return startOfNextMonth.subtract(const Duration(days: 1)).day;
+}
+
+List<DateTime> _buildCalendarDays(DateTime month) {
+  final monthStart = DateTime(month.year, month.month, 1);
+  final leadingEmpty = monthStart.weekday % 7;
+  final daysInMonth = _daysInMonth(monthStart);
+  final previousMonth = _shiftMonth(monthStart, -1);
+  final previousMonthDays = _daysInMonth(previousMonth);
+  final totalCells = leadingEmpty + daysInMonth;
+  final trailingEmpty = (7 - (totalCells % 7)) % 7;
+  final nextMonth = _shiftMonth(monthStart, 1);
+
+  final dates = <DateTime>[];
+  for (var i = 0; i < leadingEmpty; i++) {
+    final day = previousMonthDays - (leadingEmpty - 1 - i);
+    dates.add(DateTime(previousMonth.year, previousMonth.month, day));
+  }
+  for (var day = 1; day <= daysInMonth; day++) {
+    dates.add(DateTime(monthStart.year, monthStart.month, day));
+  }
+  for (var i = 0; i < trailingEmpty; i++) {
+    dates.add(DateTime(nextMonth.year, nextMonth.month, i + 1));
+  }
+  return dates;
+}
+
+String _fullMonthLabel(DateTime month) {
+  const names = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  final safeIndex = (month.month - 1).clamp(0, names.length - 1);
+  return '${names[safeIndex]} ${month.year}';
+}
+
+String _monthLabel(DateTime month) {
+  const short = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final safeIndex = (month.month - 1).clamp(0, short.length - 1);
+  return '${short[safeIndex]} ${month.year}';
+}
+
+double _progressForDate({
+  required DateTime date,
+  required List<Routine> routines,
+  required Map<String, Map<String, double>> completions,
+}) {
+  if (routines.isEmpty) {
+    return 0;
+  }
+  return weightedProgressForDate(
+    date: date,
+    routines: routines,
+    completions: completions,
+  );
 }
 
 class _HistoryContent extends StatelessWidget {

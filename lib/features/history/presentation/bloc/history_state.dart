@@ -23,6 +23,8 @@ class HistoryState extends Equatable {
     required this.range,
     required this.anchorDate,
     required this.points,
+    required this.routines,
+    required this.completions,
     this.errorMessage,
   });
 
@@ -33,6 +35,8 @@ class HistoryState extends Equatable {
       range: HistoryRange.daily,
       anchorDate: today,
       points: const [],
+      routines: const [],
+      completions: const {},
     );
   }
 
@@ -40,6 +44,8 @@ class HistoryState extends Equatable {
   final HistoryRange range;
   final DateTime anchorDate;
   final List<HistoryPoint> points;
+  final List<Routine> routines;
+  final Map<String, Map<String, double>> completions;
   final String? errorMessage;
 
   HistoryState copyWith({
@@ -47,6 +53,8 @@ class HistoryState extends Equatable {
     HistoryRange? range,
     DateTime? anchorDate,
     List<HistoryPoint>? points,
+    List<Routine>? routines,
+    Map<String, Map<String, double>>? completions,
     String? errorMessage,
   }) {
     return HistoryState(
@@ -54,6 +62,8 @@ class HistoryState extends Equatable {
       range: range ?? this.range,
       anchorDate: anchorDate ?? this.anchorDate,
       points: points ?? this.points,
+      routines: routines ?? this.routines,
+      completions: completions ?? this.completions,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -64,6 +74,8 @@ class HistoryState extends Equatable {
         range,
         anchorDate,
         points,
+        routines,
+        completions,
         errorMessage,
       ];
 }

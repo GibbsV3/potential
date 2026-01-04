@@ -129,6 +129,8 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
       range: resolvedRange,
       anchorDate: resolvedAnchor,
       points: points,
+      routines: _routines,
+      completions: _completions,
       errorMessage: null,
     );
   }
