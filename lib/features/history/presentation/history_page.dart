@@ -293,6 +293,7 @@ class _CalendarGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final rowCount = weeks;
     final normalizedSelected = normalizeDate(selectedDate);
+    final normalizedToday = normalizeDate(DateTime.now());
     return Column(
       children: [
         for (var row = 0; row < rowCount; row++) ...[
@@ -300,19 +301,25 @@ class _CalendarGrid extends StatelessWidget {
             children: [
               for (var col = 0; col < 7; col++)
                 Expanded(
-                  child: _CalendarDayCell(
-                    date: days[(row * 7) + col],
-                    isInMonth: days[(row * 7) + col].month == month.month &&
-                        days[(row * 7) + col].year == month.year,
-                    isSelected: normalizeDate(days[(row * 7) + col]) ==
-                        normalizedSelected,
-                    progress: _progressForDate(
-                      date: days[(row * 7) + col],
-                      routines: routines,
-                      routinesByDate: routinesByDate,
-                      completions: completions,
-                    ),
-                    onSelected: onDateSelected,
+                  child: Builder(
+                    builder: (context) {
+                      final date = days[(row * 7) + col];
+                      final normalizedDate = normalizeDate(date);
+                      return _CalendarDayCell(
+                        date: date,
+                        isInMonth:
+                            date.month == month.month && date.year == month.year,
+                        isSelected: normalizedDate == normalizedSelected,
+                        isToday: normalizedDate == normalizedToday,
+                        progress: _progressForDate(
+                          date: date,
+                          routines: routines,
+                          routinesByDate: routinesByDate,
+                          completions: completions,
+                        ),
+                        onSelected: onDateSelected,
+                      );
+                    },
                   ),
                 ),
             ],
@@ -330,6 +337,7 @@ class _CalendarDayCell extends StatelessWidget {
     required this.date,
     required this.isInMonth,
     required this.isSelected,
+    required this.isToday,
     required this.progress,
     required this.onSelected,
   });
@@ -337,6 +345,7 @@ class _CalendarDayCell extends StatelessWidget {
   final DateTime date;
   final bool isInMonth;
   final bool isSelected;
+  final bool isToday;
   final double progress;
   final ValueChanged<DateTime> onSelected;
 
@@ -344,7 +353,7 @@ class _CalendarDayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isInMonth) {
       // Preserve grid spacing without drawing rings for out-of-month dates.
-      return const SizedBox(height: 72);
+      return const SizedBox(height: 92);
     }
 
     final accent = CupertinoDynamicColor.resolve(
@@ -368,13 +377,6 @@ class _CalendarDayCell extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _DayRing(
-              progress: progress,
-              isSelected: isSelected,
-              accent: accent,
-              faded: !isInMonth,
-            ),
-            const SizedBox(height: AppSpace.xs),
             Container(
               width: 30,
               height: 30,
@@ -391,6 +393,28 @@ class _CalendarDayCell extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: AppSpace.xs),
+            _DayRing(
+              progress: progress,
+              isSelected: isSelected,
+              accent: accent,
+              faded: !isInMonth,
+            ),
+            const SizedBox(height: AppSpace.xs),
+            if (isToday)
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: CupertinoDynamicColor.resolve(
+                    AppColor.secondaryLabel,
+                    context,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              )
+            else
+              const SizedBox(height: 4),
           ],
         ),
       ),
