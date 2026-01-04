@@ -32,7 +32,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     try {
       final routines = await _repository.loadRoutines();
       final completions = await _repository.loadCompletions();
-      final routinesByDate = await _repository.loadRoutinesByDate();
+      final routinesByDate = await _repository.loadRoutinesByDate(
+        dateKeys: _weekDateKeys(state.selectedDate),
+      );
       emit(state.buildWith(
         routines: routines,
         routinesByDate: routinesByDate,
@@ -48,11 +50,17 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 
-  void _onDateSelected(
+  Future<void> _onDateSelected(
     DashboardDateSelected event,
     Emitter<DashboardState> emit,
-  ) {
-    emit(state.buildWith(selectedDate: event.date));
+  ) async {
+    final routinesByDate = await _repository.loadRoutinesByDate(
+      dateKeys: _weekDateKeys(event.date),
+    );
+    emit(state.buildWith(
+      selectedDate: event.date,
+      routinesByDate: routinesByDate,
+    ));
   }
 
   Future<void> _onTaskToggled(
@@ -67,7 +75,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       updated,
     );
     final completions = await _repository.loadCompletions();
-    final routinesByDate = await _repository.loadRoutinesByDate();
+    final routinesByDate = await _repository.loadRoutinesByDate(
+      dateKeys: _weekDateKeys(event.date),
+    );
     emit(
       state.buildWith(
         completions: completions,
@@ -86,7 +96,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       event.progress,
     );
     final completions = await _repository.loadCompletions();
-    final routinesByDate = await _repository.loadRoutinesByDate();
+    final routinesByDate = await _repository.loadRoutinesByDate(
+      dateKeys: _weekDateKeys(event.date),
+    );
     emit(
       state.buildWith(
         completions: completions,
@@ -100,7 +112,9 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     Emitter<DashboardState> emit,
   ) async {
     final completions = await _repository.loadCompletions();
-    final routinesByDate = await _repository.loadRoutinesByDate();
+    final routinesByDate = await _repository.loadRoutinesByDate(
+      dateKeys: _weekDateKeys(state.selectedDate),
+    );
     emit(
       state.buildWith(
         routines: event.routines,
@@ -108,6 +122,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         routinesByDate: routinesByDate,
       ),
     );
+  }
+
+  Set<String> _weekDateKeys(DateTime anchor) {
+    return weekDates(anchor).map(dateKey).toSet();
   }
 
   @override

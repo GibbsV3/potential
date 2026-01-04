@@ -115,6 +115,30 @@ class DashboardLocalStore {
     });
   }
 
+  Future<Map<String, List<RoutineModel>>> readRoutinesByDateKeys(
+    Iterable<String> dateKeys,
+  ) async {
+    final raw = await _getString(_routinesByDateKey);
+    if (raw == null) {
+      return {};
+    }
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    final keySet = dateKeys.toSet();
+    return Map<String, List<RoutineModel>>.fromEntries(
+      data.entries.where((entry) => keySet.contains(entry.key)).map(
+            (entry) => MapEntry(
+              entry.key,
+              (entry.value as List<dynamic>)
+                  .map(
+                    (item) =>
+                        RoutineModel.fromJson(item as Map<String, dynamic>),
+                  )
+                  .toList(),
+            ),
+          ),
+    );
+  }
+
   Future<void> saveRoutinesByDate(
     Map<String, List<RoutineModel>> routinesByDate,
   ) async {
@@ -127,5 +151,14 @@ class DashboardLocalStore {
       ),
     );
     await _setString(_routinesByDateKey, encoded);
+  }
+
+  Future<void> upsertRoutinesByDateEntries(
+    Map<String, List<RoutineModel>> updates,
+  ) async {
+    final existing = await readRoutinesByDate() ?? <String, List<RoutineModel>>{};
+    final merged = Map<String, List<RoutineModel>>.from(existing)
+      ..addAll(updates);
+    await saveRoutinesByDate(merged);
   }
 }

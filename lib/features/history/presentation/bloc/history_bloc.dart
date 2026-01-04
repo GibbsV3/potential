@@ -34,10 +34,13 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     try {
       _routines = await _repository.loadRoutines();
       _completions = await _repository.loadCompletions();
-      _routinesByDate = await _repository.loadRoutinesByDate();
+      final anchor = DateTime.now();
+      _routinesByDate = await _repository.loadRoutinesByDate(
+        dateKeys: _dateKeysForRange(state.range, anchor),
+      );
       emit(_buildReadyState(
         status: HistoryStatus.ready,
-        anchorDate: DateTime.now(),
+        anchorDate: anchor,
       ));
     } catch (error) {
       emit(
@@ -55,7 +58,9 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   ) async {
     try {
       _completions = await _repository.loadCompletions();
-      _routinesByDate = await _repository.loadRoutinesByDate();
+      _routinesByDate = await _repository.loadRoutinesByDate(
+        dateKeys: _dateKeysForRange(event.range, state.anchorDate),
+      );
       emit(
         _buildReadyState(
           range: event.range,
@@ -78,7 +83,9 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   ) async {
     try {
       _completions = await _repository.loadCompletions();
-      _routinesByDate = await _repository.loadRoutinesByDate();
+      _routinesByDate = await _repository.loadRoutinesByDate(
+        dateKeys: _dateKeysForRange(state.range, event.anchorDate),
+      );
       emit(
         _buildReadyState(
           anchorDate: event.anchorDate,
@@ -105,7 +112,9 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     }
     try {
       _completions = await _repository.loadCompletions();
-      _routinesByDate = await _repository.loadRoutinesByDate();
+      _routinesByDate = await _repository.loadRoutinesByDate(
+        dateKeys: _dateKeysForRange(state.range, state.anchorDate),
+      );
       emit(
         _buildReadyState(
           status: HistoryStatus.ready,
@@ -139,6 +148,33 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
       completions: _completions,
       errorMessage: null,
     );
+  }
+
+  Set<String> _dateKeysForRange(
+    HistoryRange range,
+    DateTime anchorDate,
+  ) {
+    final normalizedAnchor = normalizeDate(anchorDate);
+    switch (range) {
+      case HistoryRange.daily:
+        return List<DateTime>.generate(
+          _dailyPoints,
+          (index) => normalizedAnchor
+              .subtract(Duration(days: (_dailyPoints - 1) - index)),
+        ).map(dateKey).toSet();
+      case HistoryRange.weekly:
+        final currentWeekStart = _startOfWeek(normalizedAnchor);
+        final firstWeekStart =
+            currentWeekStart.subtract(Duration(days: 7 * (_weeklyPoints - 1)));
+        final keys = <String>{};
+        for (var week = 0; week < _weeklyPoints; week++) {
+          for (var day = 0; day < 7; day++) {
+            final date = firstWeekStart.add(Duration(days: (week * 7) + day));
+            keys.add(dateKey(date));
+          }
+        }
+        return keys;
+    }
   }
 
   List<HistoryPoint> _buildSeries(
