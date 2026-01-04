@@ -52,11 +52,6 @@ class _DashboardView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _DailyProgressSummary(
-                        progress: state.dailyProgress,
-                        selectedDate: state.selectedDate,
-                      ),
-                      const SizedBox(height: AppSpace.xl),
                       _WeekdaySelector(
                         selectedDate: state.selectedDate,
                         progressForDate: state.progressForDate,
