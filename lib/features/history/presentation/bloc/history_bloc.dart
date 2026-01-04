@@ -223,4 +223,4 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
 }
 
 const int _dailyPoints = 7;
-const int _weeklyPoints = 8;
+const int _weeklyPoints = 7;

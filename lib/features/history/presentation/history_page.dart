@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -313,35 +316,55 @@ class _HistoryChartCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _rangeLabel(state.range),
-                style: AppTextStyle.body(context).copyWith(
-                  fontWeight: FontWeight.w600,
+              AnimatedSwitcher(
+                duration: AppMotion.standard,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+                child: Text(
+                  _rangeLabel(state.range),
+                  key: ValueKey(state.range),
+                  style: AppTextStyle.body(context).copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (state.status == HistoryStatus.loading)
                 const CupertinoActivityIndicator()
               else
-                Text(
-                  _anchorLabel(state.anchorDate),
-                  style: AppTextStyle.footnote(context).copyWith(
-                    color: secondary,
+                AnimatedSwitcher(
+                  duration: AppMotion.standard,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  ),
+                  child: Text(
+                    _anchorLabel(state.anchorDate),
+                    key: ValueKey(state.anchorDate.toIso8601String()),
+                    style: AppTextStyle.footnote(context).copyWith(
+                      color: secondary,
+                    ),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: AppSpace.m),
-          AnimatedSwitcher(
-            duration: AppMotion.standard,
-            child: _HistoryChart(
-              key: ValueKey('${state.range}-${state.anchorDate}'),
-              points: state.points,
-            ),
+          _HistoryChart(
+            points: state.points,
           ),
           const SizedBox(height: AppSpace.s),
-          _XAxisLabels(
-            points: state.points,
-            range: state.range,
+          AnimatedSwitcher(
+            duration: AppMotion.standard,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+            child: _XAxisLabels(
+              key: ValueKey('${state.range}-${state.anchorDate}'),
+              points: state.points,
+              range: state.range,
+            ),
           ),
         ],
       ),
@@ -349,13 +372,75 @@ class _HistoryChartCard extends StatelessWidget {
   }
 }
 
-class _HistoryChart extends StatelessWidget {
+class _HistoryChart extends StatefulWidget {
   const _HistoryChart({
     super.key,
     required this.points,
   });
 
   final List<HistoryPoint> points;
+
+  @override
+  State<_HistoryChart> createState() => _HistoryChartState();
+}
+
+class _HistoryChartState extends State<_HistoryChart>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late List<HistoryPoint> _previousPoints;
+  late List<HistoryPoint> _targetPoints;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousPoints = widget.points;
+    _targetPoints = widget.points;
+    _controller = AnimationController(
+      vsync: this,
+      duration: AppMotion.quick,
+    )..value = 1;
+  }
+
+  @override
+  void didUpdateWidget(covariant _HistoryChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(widget.points, _targetPoints)) {
+      _previousPoints = _lerpPoints(_controller.value);
+      _targetPoints = widget.points;
+      _controller
+        ..duration = AppMotion.quick
+        ..forward(from: 0);
+    }
+  }
+
+  List<HistoryPoint> _lerpPoints(double t) {
+    final maxLength = _targetPoints.length > _previousPoints.length
+        ? _targetPoints.length
+        : _previousPoints.length;
+    return List<HistoryPoint>.generate(maxLength, (index) {
+      final targetPoint = index < _targetPoints.length
+          ? _targetPoints[index]
+          : _previousPoints[index];
+      final startProgress = index < _previousPoints.length
+          ? _previousPoints[index].progress
+          : 0.0;
+      final endProgress = index < _targetPoints.length
+          ? _targetPoints[index].progress
+          : startProgress;
+      final interpolatedProgress =
+          lerpDouble(startProgress, endProgress, t) ?? endProgress;
+      return HistoryPoint(
+        date: targetPoint.date,
+        progress: interpolatedProgress,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -367,15 +452,21 @@ class _HistoryChart extends StatelessWidget {
       AppColor.separator,
       context,
     );
-    return AspectRatio(
-      aspectRatio: 1.4,
-      child: CustomPaint(
-        painter: _HistoryChartPainter(
-          points: points,
-          accentColor: chartColor,
-          gridColor: gridColor,
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final animatedPoints = _lerpPoints(_controller.value);
+        return AspectRatio(
+          aspectRatio: 1.4,
+          child: CustomPaint(
+            painter: _HistoryChartPainter(
+              points: animatedPoints,
+              accentColor: chartColor,
+              gridColor: gridColor,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -444,9 +535,12 @@ class _HistoryChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          accentColor.withOpacity(0.18),
-          accentColor.withOpacity(0.02),
+          accentColor.withOpacity(0.14),
+          accentColor.withOpacity(0.1),
+          accentColor.withOpacity(0.06),
+          accentColor.withOpacity(0.03),
         ],
+        stops: const [0.0, 0.35, 0.7, 1.0],
       ).createShader(chartRect)
       ..style = PaintingStyle.fill;
     canvas.drawPath(fillPath, fillPaint);
@@ -480,6 +574,7 @@ class _HistoryChartPainter extends CustomPainter {
 
 class _XAxisLabels extends StatelessWidget {
   const _XAxisLabels({
+    super.key,
     required this.points,
     required this.range,
   });
@@ -523,7 +618,7 @@ String _rangeLabel(HistoryRange range) {
     case HistoryRange.daily:
       return 'Last 7 days';
     case HistoryRange.weekly:
-      return 'Last 8 weeks';
+      return 'Last 7 weeks';
   }
 }
 
