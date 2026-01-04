@@ -22,12 +22,7 @@ class LocalDashboardRepository extends DashboardRepository {
       return _routines!;
     }
     final stored = _store.readRoutines();
-    if (stored != null && stored.isNotEmpty) {
-      _routines = stored;
-    } else {
-      _routines = _seedRoutines();
-      await _persistRoutines();
-    }
+    _routines = stored != null ? List<Routine>.from(stored) : <Routine>[];
     _emitRoutines();
     return _routines!;
   }
@@ -245,66 +240,6 @@ class LocalDashboardRepository extends DashboardRepository {
       return null;
     }
     return DateTime(year, month, day);
-  }
-
-  List<Routine> _seedRoutines() {
-    return  [
-      Routine(
-        id: 'routine-work',
-        title: 'Work',
-        weight: 0.6,
-        priority: Priority.high,
-        weekdays: {
-          Weekday.monday,
-          Weekday.tuesday,
-          Weekday.wednesday,
-          Weekday.thursday,
-          Weekday.friday,
-        },
-        tasks: [
-          Task(
-            id: 'task-design',
-            title: 'Design Presentation',
-            weight: 0.55,
-            details: '',
-            priority: priorityForWeight(0.55),
-          ),
-          Task(
-            id: 'task-meeting',
-            title: 'Team Meeting',
-            weight: 0.45,
-            details: '',
-            priority: priorityForWeight(0.45),
-          ),
-        ],
-        isActive: true,
-      ),
-      Routine(
-        id: 'routine-personal',
-        title: 'Personal',
-        weight: 0.4,
-        priority: Priority.medium,
-        weekdays: {
-          Weekday.monday,
-          Weekday.tuesday,
-          Weekday.wednesday,
-          Weekday.thursday,
-          Weekday.friday,
-          Weekday.saturday,
-          Weekday.sunday,
-        },
-        tasks: [
-          Task(
-            id: 'task-grocery',
-            title: 'Grocery Shopping',
-            weight: 1.0,
-            details: '',
-            priority: priorityForWeight(1.0),
-          ),
-        ],
-        isActive: true,
-      ),
-    ];
   }
 
   void _emitRoutines() {
