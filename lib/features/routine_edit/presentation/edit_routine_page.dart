@@ -545,15 +545,16 @@ class _PriorityDot extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: fillColor,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: borderColor,
-            width: borderWidth,
+      child: Padding(
+        padding: EdgeInsets.all(AppSpace.s),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: fillColor,
+            shape: BoxShape.circle,
+            border: Border.all(color: borderColor, width: borderWidth,
+            ),
           ),
         ),
       ),
