@@ -13,15 +13,22 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     on<HistoryRangeChanged>(_onRangeChanged);
     on<HistoryAnchorChanged>(_onAnchorChanged);
     on<HistoryRoutinesUpdated>(_onRoutinesUpdated);
+    on<HistoryCompletionsUpdated>(_onCompletionsUpdated);
 
     _routineSubscription = _repository.watchRoutines().listen((routines) {
       add(HistoryRoutinesUpdated(routines));
+    });
+    _completionsSubscription =
+        _repository.watchCompletions().listen((completions) {
+      add(HistoryCompletionsUpdated(completions));
     });
   }
 
   final DashboardRepository _repository;
 
   late final StreamSubscription<List<Routine>> _routineSubscription;
+  late final StreamSubscription<Map<String, Map<String, double>>>
+      _completionsSubscription;
   List<Routine> _routines = const [];
   Map<String, Map<String, double>> _completions = const {};
   Map<String, List<Routine>> _routinesByDate = const {};
@@ -112,6 +119,33 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     }
     try {
       _completions = await _repository.loadCompletions();
+      _routinesByDate = await _repository.loadRoutinesByDate(
+        dateKeys: _dateKeysForRange(state.range, state.anchorDate),
+      );
+      emit(
+        _buildReadyState(
+          status: HistoryStatus.ready,
+        ),
+      );
+    } catch (error) {
+      emit(
+        state.copyWith(
+          status: HistoryStatus.failure,
+          errorMessage: error.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onCompletionsUpdated(
+    HistoryCompletionsUpdated event,
+    Emitter<HistoryState> emit,
+  ) async {
+    _completions = event.completions;
+    if (state.status == HistoryStatus.loading) {
+      return;
+    }
+    try {
       _routinesByDate = await _repository.loadRoutinesByDate(
         dateKeys: _dateKeysForRange(state.range, state.anchorDate),
       );
@@ -264,6 +298,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   @override
   Future<void> close() {
     _routineSubscription.cancel();
+    _completionsSubscription.cancel();
     return super.close();
   }
 }

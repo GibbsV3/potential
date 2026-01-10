@@ -37,3 +37,12 @@ class HistoryRoutinesUpdated extends HistoryEvent {
   @override
   List<Object?> get props => [routines];
 }
+
+class HistoryCompletionsUpdated extends HistoryEvent {
+  const HistoryCompletionsUpdated(this.completions);
+
+  final Map<String, Map<String, double>> completions;
+
+  @override
+  List<Object?> get props => [completions];
+}

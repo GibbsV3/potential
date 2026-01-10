@@ -14,6 +14,11 @@ class LocalDashboardRepository extends DashboardRepository {
       StreamController<List<Routine>>.broadcast(
     onListen: _emitRoutines,
   );
+  late final StreamController<Map<String, Map<String, double>>>
+      _completionsController =
+      StreamController<Map<String, Map<String, double>>>.broadcast(
+    onListen: _emitCompletions,
+  );
 
   List<Routine>? _routines;
   Map<String, Map<String, double>>? _completions;
@@ -40,11 +45,13 @@ class LocalDashboardRepository extends DashboardRepository {
   @override
   Future<Map<String, Map<String, double>>> loadCompletions() async {
     if (_completions != null) {
+      _emitCompletions();
       return _completions!;
     }
     _completions =
         await _store.readCompletions() ?? <String, Map<String, double>>{};
     await _ensureSnapshotsForDates(_completions!.keys);
+    _emitCompletions();
     return _completions!;
   }
 
@@ -110,12 +117,19 @@ class LocalDashboardRepository extends DashboardRepository {
     completions[dateKey] = dayMap;
     _completions = completions;
     await _store.saveCompletions(completions);
+    _emitCompletions();
   }
 
   @override
   Stream<List<Routine>> watchRoutines() {
     _emitRoutines();
     return _routinesController.stream;
+  }
+
+  @override
+  Stream<Map<String, Map<String, double>>> watchCompletions() {
+    _emitCompletions();
+    return _completionsController.stream;
   }
 
   @override
@@ -327,6 +341,20 @@ class LocalDashboardRepository extends DashboardRepository {
       return;
     }
     _routinesController.add(List<Routine>.unmodifiable(_routines!));
+  }
+
+  void _emitCompletions() {
+    if (_completions == null || _completionsController.isClosed) {
+      return;
+    }
+    _completionsController.add(
+      Map<String, Map<String, double>>.unmodifiable(
+        _completions!.map(
+          (dateKey, dayMap) =>
+              MapEntry(dateKey, Map<String, double>.unmodifiable(dayMap)),
+        ),
+      ),
+    );
   }
 }
 

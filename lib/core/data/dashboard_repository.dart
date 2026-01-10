@@ -5,6 +5,7 @@ abstract class DashboardRepository {
 
   Future<List<Routine>> loadRoutines();
   Future<Map<String, Map<String, double>>> loadCompletions();
+  Stream<Map<String, Map<String, double>>> watchCompletions();
   Future<Map<String, List<Routine>>> loadRoutinesByDate({
     Iterable<String> dateKeys = const [],
   });
